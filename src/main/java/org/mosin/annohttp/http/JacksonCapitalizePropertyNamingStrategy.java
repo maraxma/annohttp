@@ -2,6 +2,8 @@ package org.mosin.annohttp.http;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
+import java.io.Serial;
+
 /**
  * 首字母大写属性命名法
  *
@@ -10,6 +12,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
  */
 public class JacksonCapitalizePropertyNamingStrategy extends PropertyNamingStrategies.NamingBase {
 
+    @Serial
     private static final long serialVersionUID = -4940852506779479299L;
 
     @Override

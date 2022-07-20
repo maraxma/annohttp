@@ -118,10 +118,10 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
                 // should never happen
                 throw new IllegalStateException("PreparingRequest is not a ParameterizedType(SHOULD NEVER HAPPEN)");
             }
-            annoHttpClientMetadata.requestMethodRerturnActualType = ((ParameterizedType) genericType).getActualTypeArguments()[0];
+            annoHttpClientMetadata.requestMethodReturnActualType = ((ParameterizedType) genericType).getActualTypeArguments()[0];
             return preparingRequest;
         } else {
-            annoHttpClientMetadata.requestMethodRerturnActualType = genericType;
+            annoHttpClientMetadata.requestMethodReturnActualType = genericType;
             return preparingRequest.request();
         }
     }

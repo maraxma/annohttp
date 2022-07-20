@@ -149,7 +149,7 @@ class DefaultPreparingRequest<T> implements PreparingRequest<T> {
     @Override
     @SuppressWarnings("unchecked")
     public T request() {
-        HttpResponse httpResponse = null;
+        HttpResponse httpResponse;
         try {
             httpResponse = executeRequest();
         } catch (Exception e) {
@@ -247,7 +247,7 @@ class DefaultPreparingRequest<T> implements PreparingRequest<T> {
 
     @Override
     public CompletableFuture<HttpResponse> requestAsyncClassically(Executor executorService) {
-        return CompletableFuture.supplyAsync(() -> requestClassically(), executorService);
+        return CompletableFuture.supplyAsync(this::requestClassically, executorService);
     }
 
     @Override
@@ -262,7 +262,7 @@ class DefaultPreparingRequest<T> implements PreparingRequest<T> {
 
     @Override
     public CompletableFuture<OperableHttpResponse> requestOperableAsync(Executor executorService) {
-        return CompletableFuture.supplyAsync(() -> requestOperable(), executorService);
+        return CompletableFuture.supplyAsync(this::requestOperable, executorService);
     }
 
     @Override
@@ -288,7 +288,7 @@ class DefaultPreparingRequest<T> implements PreparingRequest<T> {
     /**
      * 构建实际的请求对象。
      *
-     * @return
+     * @return @{@link HttpUriRequest} 实例
      */
     protected HttpUriRequest generateHttpRequest() {
 

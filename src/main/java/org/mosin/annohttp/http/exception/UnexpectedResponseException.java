@@ -1,5 +1,6 @@
 package org.mosin.annohttp.http.exception;
 
+import java.io.Serial;
 import java.util.Optional;
 
 import org.apache.http.HttpResponse;
@@ -7,6 +8,7 @@ import org.apache.http.StatusLine;
 
 public class UnexpectedResponseException extends RuntimeException {
 
+    @Serial
     private static final long serialVersionUID = -92981615956413451L;
     private HttpResponse httpResponse;
 

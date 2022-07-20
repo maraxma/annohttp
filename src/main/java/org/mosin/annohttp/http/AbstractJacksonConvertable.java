@@ -1,21 +1,14 @@
 package org.mosin.annohttp.http;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpResponse;
 import org.apache.http.util.EntityUtils;
 import org.mosin.annohttp.http.exception.ConversionException;
 import org.mosin.annohttp.http.serialization.TypeRef;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.*;
 
 public abstract class AbstractJacksonConvertable extends AbstractConvertable {
 
@@ -129,7 +122,7 @@ public abstract class AbstractJacksonConvertable extends AbstractConvertable {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         EntityUtils.consumeQuietly(httpResponse.getEntity());
     }
 

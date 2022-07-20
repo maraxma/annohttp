@@ -13,7 +13,7 @@ public class DefaultAnnoHttpClientMetadata implements AnnoHttpClientMetadata {
     Request requestAnnotation;
     Method requestMethod;
     Object[] requestArguments;
-    Type requestMethodRerturnActualType;
+    Type requestMethodReturnActualType;
 
     @Override
     public Class<?> getServiceClientClass() {
@@ -47,6 +47,6 @@ public class DefaultAnnoHttpClientMetadata implements AnnoHttpClientMetadata {
 
     @Override
     public Type getRequestMethodActualType() {
-        return requestMethodRerturnActualType;
+        return requestMethodReturnActualType;
     }
 }

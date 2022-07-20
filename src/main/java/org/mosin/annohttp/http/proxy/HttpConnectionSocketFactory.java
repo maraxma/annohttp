@@ -34,7 +34,7 @@ public class HttpConnectionSocketFactory extends PlainConnectionSocketFactory {
 
     @Override
     public Socket createSocket(HttpContext context) throws IOException {
-        Socket socket = null;
+        Socket socket;
         RequestProxy requestProxy = getRequestProxy(context);
         if (requestProxy != null && requestProxy.getProxyType() == ProxyType.SOCKS) {
             // 这里指只处理SOCKS类型的代理

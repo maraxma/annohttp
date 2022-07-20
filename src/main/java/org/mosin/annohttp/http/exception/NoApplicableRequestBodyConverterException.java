@@ -2,8 +2,11 @@ package org.mosin.annohttp.http.exception;
 
 import org.apache.http.entity.ContentType;
 
+import java.io.Serial;
+
 public class NoApplicableRequestBodyConverterException extends ConversionException {
 
+    @Serial
     private static final long serialVersionUID = -3866209046662394762L;
 
     private ContentType targetContentType;

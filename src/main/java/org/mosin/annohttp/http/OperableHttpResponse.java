@@ -198,7 +198,7 @@ public class OperableHttpResponse implements HttpResponse, Sequencable {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         EntityUtils.consumeQuietly(getEntity());
     }
 
@@ -215,14 +215,17 @@ public class OperableHttpResponse implements HttpResponse, Sequencable {
 
     @Override
     public Object asJavaSerializedSequenceToObject() {
-        InputStream inputStream = asInputStream();
-        if (inputStream == null) {
-            return null;
-        }
-        try (ObjectInputStream objectInputStream = new ObjectInputStream(inputStream)) {
-            return objectInputStream.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            throw new ConversionException("Cannot convert response to Java Object", e);
+        try (InputStream inputStream = asInputStream()) {
+            if (inputStream == null) {
+                return null;
+            }
+            try (ObjectInputStream objectInputStream = new ObjectInputStream(inputStream)) {
+                return objectInputStream.readObject();
+            } catch (IOException | ClassNotFoundException e) {
+                throw new ConversionException("Cannot convert response to Java Object", e);
+            }
+        } catch (IOException e) {
+            throw new ConversionException(e);
         }
     }
 

@@ -18,7 +18,7 @@ public class ResponseVisitorCache {
         return REG.compute(clazz, (k, v) -> {
             if (v == null) {
                 try {
-                    v = clazz.getDeclaredConstructor(new Class<?>[]{}).newInstance(new Object[]{});
+                    v = clazz.getDeclaredConstructor(new Class<?>[]{}).newInstance();
                 } catch (InstantiationException | IllegalAccessException | IllegalArgumentException
                          | InvocationTargetException | NoSuchMethodException | SecurityException e) {
                     throw new RuntimeException("Cannot acquire ResponseVisitor for class '" + clazz + "'", e);

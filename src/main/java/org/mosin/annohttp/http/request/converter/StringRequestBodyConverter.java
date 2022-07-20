@@ -27,8 +27,7 @@ public class StringRequestBodyConverter implements RequestBodyConverter {
             String fieldName = "".equals(formFieldName) ? DEFAULT_STRING_FORM_FIELD_NAME : formFieldName;
             if (contentType.getMimeType().equalsIgnoreCase(ContentType.TEXT_PLAIN.getMimeType())) {
                 httpEntity = new StringEntity((String) source, charset);
-            }
-            if (contentType.getMimeType().equalsIgnoreCase(ContentType.APPLICATION_FORM_URLENCODED.getMimeType())) {
+            } else if (contentType.getMimeType().equalsIgnoreCase(ContentType.APPLICATION_FORM_URLENCODED.getMimeType())) {
                 BasicNameValuePair basicNameValuePair = new BasicNameValuePair(fieldName, (String) source);
                 httpEntity = new UrlEncodedFormEntity(Collections.singletonList(basicNameValuePair), charset);
             } else if (contentType.getMimeType().equalsIgnoreCase(ContentType.MULTIPART_FORM_DATA.getMimeType())) {

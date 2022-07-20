@@ -1,7 +1,10 @@
 package org.mosin.annohttp.http.exception;
 
+import java.io.Serial;
+
 public class RequestFailedException extends RuntimeException {
 
+    @Serial
     private static final long serialVersionUID = 3389270448584832066L;
 
     public RequestFailedException() {

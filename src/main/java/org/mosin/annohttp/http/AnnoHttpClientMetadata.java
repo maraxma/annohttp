@@ -53,7 +53,7 @@ public interface AnnoHttpClientMetadata {
     /**
      * 获得请求方法上附带的参数
      *
-     * @return
+     * @return 参数实例数组
      */
     Object[] getRequestMethodArguments();
 }
