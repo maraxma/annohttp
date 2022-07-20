@@ -82,6 +82,7 @@ public interface RequestProxy {
 
     /**
      * 创建一个新的 {@link RequestProxy} 拷贝。
+     *
      * @param requestProxy 原对象
      * @return 新的对象
      */

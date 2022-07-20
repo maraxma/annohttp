@@ -7,11 +7,11 @@ import org.mosin.annohttp.http.JacksonComponentHolder;
 
 public class Json2BeanResponseBodyConverter extends AbstractJackson2BeanResponseBodyConverter {
 
-	public Json2BeanResponseBodyConverter() {
-		super();
-		objectMapper = JacksonComponentHolder.getJsonMapper(false, true, true, false);
-		acceptableContentTypes = Set.of(ContentType.APPLICATION_JSON, ContentType.create("text/json"));
-		name = "json";
-	}
-	
+    public Json2BeanResponseBodyConverter() {
+        super();
+        objectMapper = JacksonComponentHolder.getJsonMapper(false, true, true, false);
+        acceptableContentTypes = Set.of(ContentType.APPLICATION_JSON, ContentType.create("text/json"));
+        name = "json";
+    }
+
 }

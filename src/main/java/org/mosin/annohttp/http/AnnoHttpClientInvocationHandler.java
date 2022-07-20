@@ -46,7 +46,7 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-    	
+
         // 生成PreparingRequest实例，视情况使用其发起请求或者直接返回它
         // 需要构造PreparingRequest实例，延迟请求
         Type genericType = method.getGenericReturnType();
@@ -56,16 +56,16 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
         Request requestAnno = method.getAnnotation(Request.class);
         Parameter[] parameters = method.getParameters();
         EvaluationContext evaluationContext = SpelUtils.prepareSpelContext(args);
-        
+
         /*       1 处理HttpMethod  */
         HttpMethod computedMethod = processMethod(requestAnno, parameters, args);
-        
+
         /*       2 处理URL         */
         String computedUrl = processUrl(requestAnno, parameters, args, evaluationContext);
-        
+
         /*       3 处理PathVars     */
         Map<String, String> pathVars = processPathVars(requestAnno, parameters, args);
-        
+
         /*       4 处理请求头       */
         // 注意优先级，参数请求头 > @Request注解请求头 > @ContentType请求头
         LinkedList<CoverableNameValuePair> headers = processHeaders(requestAnno, method, parameters, args, evaluationContext);
@@ -76,18 +76,18 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
 
         /*       6 处理代理设置     */
         RequestProxy requestProxy = processProxy(requestAnno, evaluationContext);
-        
+
         /*       7 处理Body      */
         // Body可以是各种类型的，annohttp会根据不同的类型采取不同的策略
         // Body只能有一个，且和@Field或者@Fields冲突，因为都会占用Body
         HttpEntity httpEntity = processBody(headers, requestAnno, parameters, args, metadata, evaluationContext);
-        
+
         /*    8 处理FormField */
         LinkedHashMap<String, Object> formFields = processFormFields(parameters, args);
-        
+
         /*    9 处理successCondition */
         // 在PreparingRequest中处理
-        
+
         /*   10 处理Visitor  */
         // 在PreparingRequest中处理
 
@@ -103,15 +103,15 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
         annoHttpClientMetadata.requestArguments = args == null ? new Object[0] : Arrays.copyOf(args, args.length);
         annoHttpClientMetadata.requestAnnotation = requestAnno;
         preparingRequest = new DefaultPreparingRequest<>(
-        		computedMethod, 
-        		computedUrl, 
-        		pathVars, 
-        		httpEntity, 
-        		requestProxy, 
-        		headers, 
-        		queries, 
-        		formFields, 
-        		annoHttpClientMetadata);
+                computedMethod,
+                computedUrl,
+                pathVars,
+                httpEntity,
+                requestProxy,
+                headers,
+                queries,
+                formFields,
+                annoHttpClientMetadata);
         if (PreparingRequest.class.isAssignableFrom(returnType)) {
             // 需要构造PreparingRequest实例，延迟请求
             if (!(genericType instanceof ParameterizedType)) {
@@ -121,26 +121,26 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
             annoHttpClientMetadata.requestMethodRerturnActualType = ((ParameterizedType) genericType).getActualTypeArguments()[0];
             return preparingRequest;
         } else {
-        	annoHttpClientMetadata.requestMethodRerturnActualType = genericType;
+            annoHttpClientMetadata.requestMethodRerturnActualType = genericType;
             return preparingRequest.request();
         }
     }
 
     private boolean findAnnotation(Parameter[] parameters, Class<? extends Annotation> annoClass) {
-		for (Parameter parameter : parameters) {
-			if (parameter.isAnnotationPresent(annoClass)) {
-				return true;
-			}
-		}
-		return false;
-	}
+        for (Parameter parameter : parameters) {
+            if (parameter.isAnnotationPresent(annoClass)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
-	private void checkHeader(String headerName, Object headerValue) {
+    private void checkHeader(String headerName, Object headerValue) {
         if (null == headerName || "".equals(headerName) || headerValue == null) {
             throw new IllegalArgumentException("Header name cannot null or empty; headerValue cannot be null");
         }
     }
-    
+
     private CoverableNameValuePair getQueryParameterFromStringStyled(String stringStyledQuery, boolean queryCoverable) {
         if (null == stringStyledQuery || "".equals(stringStyledQuery.trim()) || !stringStyledQuery.contains("=")) {
             throw new IllegalArgumentException("Query definition string is invalid: " + stringStyledQuery);
@@ -149,7 +149,7 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
         String queryName = stringStyledQuery.substring(0, i).trim();
         String queryValue = stringStyledQuery.substring(i + 1).trim();
         if ("".equals(queryName)) {
-            throw new IllegalArgumentException("Query name '"+ queryName +"' is invalid in query string '" + stringStyledQuery + "'");
+            throw new IllegalArgumentException("Query name '" + queryName + "' is invalid in query string '" + stringStyledQuery + "'");
         }
         return new CoverableNameValuePair(queryName, queryValue, queryCoverable);
     }
@@ -162,34 +162,34 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
         String headerName = stringStyledHeader.substring(0, i).trim();
         String headerValue = stringStyledHeader.substring(i + 1).trim();
         if ("".equals(headerName)) {
-            throw new IllegalArgumentException("Header name '"+ headerName +"' is invalid in header string '" + stringStyledHeader + "'");
+            throw new IllegalArgumentException("Header name '" + headerName + "' is invalid in header string '" + stringStyledHeader + "'");
         }
         return new CoverableNameValuePair(headerName, headerValue, coverable);
     }
-    
+
     private NameValuePair getPathVarFromStringStyled(String pathVar) {
-    	if (null == pathVar || "".equals(pathVar) || !pathVar.contains("=")) {
+        if (null == pathVar || "".equals(pathVar) || !pathVar.contains("=")) {
             throw new IllegalArgumentException("PathVar string is invalid: " + pathVar);
         }
         int i = pathVar.indexOf(":");
         String varName = pathVar.substring(0, i).trim();
         String varValue = pathVar.substring(i + 1).trim();
         if ("".equals(varName)) {
-            throw new IllegalArgumentException("PathVar name '"+ varName +"' is invalid in pathVar string '" + pathVar + "'");
+            throw new IllegalArgumentException("PathVar name '" + varName + "' is invalid in pathVar string '" + pathVar + "'");
         }
         if ("".equals(varValue)) {
-        	throw new IllegalArgumentException("PathVar value '"+ varValue +"' is invalid in pathVar string '" + pathVar + "'");
+            throw new IllegalArgumentException("PathVar value '" + varValue + "' is invalid in pathVar string '" + pathVar + "'");
         }
         return new BasicNameValuePair(varName, varValue);
     }
-    
+
     private void addCoverable(LinkedList<CoverableNameValuePair> existing, CoverableNameValuePair incoming) {
-    	if (incoming == null) {
+        if (incoming == null) {
             throw new IllegalArgumentException("Incoming coverable header/query paratmeter cannot be null");
         }
         Iterator<CoverableNameValuePair> iter = existing.iterator();
         while (iter.hasNext()) {
-        	CoverableNameValuePair existingCoverable = iter.next();
+            CoverableNameValuePair existingCoverable = iter.next();
             NameValuePair existingNameValuePair = (NameValuePair) existingCoverable;
             NameValuePair incomingNameValuePair = (NameValuePair) incoming;
             if (existingNameValuePair.getName().equalsIgnoreCase(incomingNameValuePair.getName())) {
@@ -202,92 +202,92 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
     }
 
     protected String processUrl(Request requestAnno, Parameter[] parameters, Object[] args, EvaluationContext evaluationContext) {
-    	String computedUrl = requestAnno.url();
+        String computedUrl = requestAnno.url();
         String urlSpel = requestAnno.urlSpel();
         if (!"".equals(computedUrl) && !"".equals(urlSpel)) {
-        	throw new IllegalArgumentException("Only can set one of @Request.url and @Request.urlSpel");
+            throw new IllegalArgumentException("Only can set one of @Request.url and @Request.urlSpel");
         }
         if (!"".equals(urlSpel)) {
-        	Object res = SpelUtils.executeSpel(urlSpel, evaluationContext, Object.class);
-        	if (!(res instanceof String)) {
-        		throw new IllegalArgumentException("@Request.urlSpel must return a string instance");
-        	}
-        	computedUrl = (String) res;
+            Object res = SpelUtils.executeSpel(urlSpel, evaluationContext, Object.class);
+            if (!(res instanceof String)) {
+                throw new IllegalArgumentException("@Request.urlSpel must return a string instance");
+            }
+            computedUrl = (String) res;
         }
         for (int i = 0; i < parameters.length; i++) {
             Parameter parameter = parameters[i];
             Class<?> parameterType = parameter.getType();
             if (parameter.isAnnotationPresent(org.mosin.annohttp.annotation.Url.class)) {
-            	if (!String.class.isAssignableFrom(parameterType)) {
-            		throw new IllegalArgumentException("@Url accept String class only");
-            	}
-            	computedUrl = (String) args[i];
-            	break;
+                if (!String.class.isAssignableFrom(parameterType)) {
+                    throw new IllegalArgumentException("@Url accept String class only");
+                }
+                computedUrl = (String) args[i];
+                break;
             }
         }
         return computedUrl;
-	}
+    }
 
-	protected HttpMethod processMethod(Request requestAnno, Parameter[] parameters, Object[] args) {
-    	HttpMethod computedMethod = requestAnno.method();
+    protected HttpMethod processMethod(Request requestAnno, Parameter[] parameters, Object[] args) {
+        HttpMethod computedMethod = requestAnno.method();
         for (int i = 0; i < parameters.length; i++) {
             Parameter parameter = parameters[i];
             Class<?> parameterType = parameter.getType();
             if (parameter.isAnnotationPresent(org.mosin.annohttp.annotation.Method.class)) {
-            	if (!HttpMethod.class.isAssignableFrom(parameterType)) {
-            		throw new IllegalArgumentException("@Method accept HttpMethod class only");
-            	}
-            	computedMethod = (HttpMethod) args[i];
-            	break;
+                if (!HttpMethod.class.isAssignableFrom(parameterType)) {
+                    throw new IllegalArgumentException("@Method accept HttpMethod class only");
+                }
+                computedMethod = (HttpMethod) args[i];
+                break;
             }
         }
         return computedMethod;
-	}
+    }
 
-	protected Map<String, String> processPathVars(Request requestAnno, Parameter[] parameters, Object[] args) {
-		Map<String, String> pathVars = new HashMap<>();
+    protected Map<String, String> processPathVars(Request requestAnno, Parameter[] parameters, Object[] args) {
+        Map<String, String> pathVars = new HashMap<>();
         for (int i = 0; i < parameters.length; i++) {
             Parameter parameter = parameters[i];
             Class<?> parameterType = parameter.getType();
             if (parameter.isAnnotationPresent(org.mosin.annohttp.annotation.PathVar.class)) {
-            	if (parameter.isAnnotationPresent(PathVars.class)) {
-            		throw new IllegalArgumentException("A parameter can put one of PathVar/PathVars");
-            	}
-            	if (!String.class.isAssignableFrom(parameterType)) {
-            		throw new IllegalArgumentException("@PathVar accept String class only");
-            	}
-            	NameValuePair nameValuePair = getPathVarFromStringStyled((String) args[i]);
-            	pathVars.put(nameValuePair.getName(), nameValuePair.getValue());
+                if (parameter.isAnnotationPresent(PathVars.class)) {
+                    throw new IllegalArgumentException("A parameter can put one of PathVar/PathVars");
+                }
+                if (!String.class.isAssignableFrom(parameterType)) {
+                    throw new IllegalArgumentException("@PathVar accept String class only");
+                }
+                NameValuePair nameValuePair = getPathVarFromStringStyled((String) args[i]);
+                pathVars.put(nameValuePair.getName(), nameValuePair.getValue());
             } else if (parameter.isAnnotationPresent(PathVars.class)) {
-            	if (parameter.isAnnotationPresent(PathVar.class)) {
-            		throw new IllegalArgumentException("A parameter can put one of PathVar/PathVars");
-            	}
-            	if (!Map.class.isAssignableFrom(parameterType)) {
-            		throw new IllegalArgumentException("@PathVar accept Map class only(Map<String, String>)");
-            	}
-            	@SuppressWarnings("unchecked")
-				Map<String, String> pathVarsMap = (Map<String, String>) args[i];
-            	for (Map.Entry<String, String> entry : pathVarsMap.entrySet()) {
-					String key = entry.getKey();
-					String value = entry.getValue();
-					key = key == null ? null : key.trim();
-					value = value == null ? null : value.trim();
-					if (key == null || "".equals(key)) {
-						throw new IllegalArgumentException("pathVar's name caonnt be null or empty");
-					}
-					if (value == null || "".equals(value)) {
-						throw new IllegalArgumentException("pathVar's value caonnt be null or empty");
-					}
-					pathVarsMap.put(key, value);
-				}
+                if (parameter.isAnnotationPresent(PathVar.class)) {
+                    throw new IllegalArgumentException("A parameter can put one of PathVar/PathVars");
+                }
+                if (!Map.class.isAssignableFrom(parameterType)) {
+                    throw new IllegalArgumentException("@PathVar accept Map class only(Map<String, String>)");
+                }
+                @SuppressWarnings("unchecked")
+                Map<String, String> pathVarsMap = (Map<String, String>) args[i];
+                for (Map.Entry<String, String> entry : pathVarsMap.entrySet()) {
+                    String key = entry.getKey();
+                    String value = entry.getValue();
+                    key = key == null ? null : key.trim();
+                    value = value == null ? null : value.trim();
+                    if (key == null || "".equals(key)) {
+                        throw new IllegalArgumentException("pathVar's name caonnt be null or empty");
+                    }
+                    if (value == null || "".equals(value)) {
+                        throw new IllegalArgumentException("pathVar's value caonnt be null or empty");
+                    }
+                    pathVarsMap.put(key, value);
+                }
             }
         }
-        
-        return pathVars;
-	}
 
-	protected LinkedList<CoverableNameValuePair> processHeaders(Request requestAnno, Method method, Parameter[] parameters, Object[] args, EvaluationContext evaluationContext) {
-		LinkedList<CoverableNameValuePair> headers = new LinkedList<>();
+        return pathVars;
+    }
+
+    protected LinkedList<CoverableNameValuePair> processHeaders(Request requestAnno, Method method, Parameter[] parameters, Object[] args, EvaluationContext evaluationContext) {
+        LinkedList<CoverableNameValuePair> headers = new LinkedList<>();
         boolean headerCoverable = requestAnno.headerCoverable();
         // 4.1 处理参数请求头
         for (int i = 0; i < parameters.length; i++) {
@@ -304,7 +304,7 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
                 org.mosin.annohttp.annotation.Header headerAnno = parameter.getAnnotation(org.mosin.annohttp.annotation.Header.class);
                 String annoHeaderName = headerAnno.value();
                 if (annoHeaderName == null || "".equals(annoHeaderName = annoHeaderName.trim())) {
-                	throw new IllegalArgumentException("Header name cannot be null or empty: " + parameter.getName());
+                    throw new IllegalArgumentException("Header name cannot be null or empty: " + parameter.getName());
                 }
                 addCoverable(headers, new CoverableNameValuePair(annoHeaderName, argHeaderValue));
             }
@@ -315,7 +315,7 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
                 if (String[].class.isAssignableFrom(parameterType)) {
                     String[] headerArray = (String[]) args[i];
                     for (String s : headerArray) {
-                    	addCoverable(headers, getHeaderFromStringStyled(s, headerCoverable));
+                        addCoverable(headers, getHeaderFromStringStyled(s, headerCoverable));
                     }
                 } else {
                     @SuppressWarnings("unchecked")
@@ -335,7 +335,7 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
         } else {
             if (annoHeaders.length != 0) {
                 for (String annoHeader : annoHeaders) {
-                	CoverableNameValuePair h = getHeaderFromStringStyled(annoHeader, headerCoverable);
+                    CoverableNameValuePair h = getHeaderFromStringStyled(annoHeader, headerCoverable);
                     addCoverable(headers, h);
                 }
             } else {
@@ -383,34 +383,34 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
         // 4.4 处理@Request.contentType()
         String annoContentType = requestAnno.contentType();
         if (!"".equals(annoContentType.trim())) {
-        	headers.add(new CoverableNameValuePair(HTTP.CONTENT_TYPE, annoContentType, headerCoverable));
+            headers.add(new CoverableNameValuePair(HTTP.CONTENT_TYPE, annoContentType, headerCoverable));
         }
-        
-        return headers;
-	}
 
-	protected HttpEntity processBody(List<CoverableNameValuePair> existingHeaders, Request requestAnno, Parameter[] parameters, Object[] args, AnnoHttpClientMetadata metadata, EvaluationContext evaluationContext) {
-    	HttpEntity httpEntity;
-    	ContentType computedRequestContentType = null;
+        return headers;
+    }
+
+    protected HttpEntity processBody(List<CoverableNameValuePair> existingHeaders, Request requestAnno, Parameter[] parameters, Object[] args, AnnoHttpClientMetadata metadata, EvaluationContext evaluationContext) {
+        HttpEntity httpEntity;
+        ContentType computedRequestContentType = null;
         for (CoverableNameValuePair header : existingHeaders) {
-			if (header.getName().equalsIgnoreCase(HTTP.CONTENT_TYPE)) {
-				computedRequestContentType = ContentType.parse(header.getValue());
-				break;
-			}
-		}
+            if (header.getName().equalsIgnoreCase(HTTP.CONTENT_TYPE)) {
+                computedRequestContentType = ContentType.parse(header.getValue());
+                break;
+            }
+        }
         if (computedRequestContentType == null) {
-        	computedRequestContentType = ContentType.APPLICATION_JSON;
+            computedRequestContentType = ContentType.APPLICATION_JSON;
         }
         int bodyFound = 0;
         int bodyIndex = -1;
         for (int i = 0; i < parameters.length; i++) {
-        	if (parameters[i].isAnnotationPresent(Body.class)) {
-        		bodyFound++;
-        		bodyIndex = i;
-        	}
-        	if (bodyFound > 1) {
-        		throw new IllegalArgumentException("You cannot use more than 1 @Body");
-        	}
+            if (parameters[i].isAnnotationPresent(Body.class)) {
+                bodyFound++;
+                bodyIndex = i;
+            }
+            if (bodyFound > 1) {
+                throw new IllegalArgumentException("You cannot use more than 1 @Body");
+            }
         }
         Class<?> requestBodyConverterClass = requestAnno.requestBodyConverter();
         if (bodyIndex != -1) {
@@ -419,31 +419,31 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
             httpEntity = convertRequestBody(requestBodyConverterClass, args[bodyIndex], computedRequestContentType, metadata, bodyAnno.value());
         } else {
             // 在参数列表中找不到Body才处理注解上的Body
-        	// 不要忘了在@Request中也有Body的设定
-        	String annoBodyString = requestAnno.bodyString();
-        	byte[] annoBodyBytes = requestAnno.bodyBytes();
-        	String annoBodySpel = requestAnno.bodySpel();
-        	if (!"".equals(annoBodyString)) {
-        		if (!"".equals(annoBodySpel) || annoBodyBytes.length != 0) {
-        			throw new IllegalArgumentException("You can only use one of bodyString/bodyBytes/bodySpel to set body on @Request");
-        		}
-        		httpEntity = convertRequestBody(requestBodyConverterClass, annoBodyString, computedRequestContentType, metadata, DEFAULT_STRING_FIELD_NAME);
-        	} else if (annoBodyBytes.length != 0) {
-        		if (!"".equals(annoBodySpel)) {
-        			throw new IllegalArgumentException("You can only use one of bodyString/bodyBytes/bodySpel to set body on @Request");
-        		}
-        		httpEntity = convertRequestBody(requestBodyConverterClass, annoBodyBytes, computedRequestContentType, metadata, DEFAULT_BYTES_FIELD_NAME);
-        	} else {
-        		Object res = SpelUtils.executeSpel(annoBodySpel, evaluationContext, Object.class);
-        		httpEntity = convertRequestBody(requestBodyConverterClass, res, computedRequestContentType, metadata, DEFAULT_OBJECT_FIELD_NAME);
-        	}
+            // 不要忘了在@Request中也有Body的设定
+            String annoBodyString = requestAnno.bodyString();
+            byte[] annoBodyBytes = requestAnno.bodyBytes();
+            String annoBodySpel = requestAnno.bodySpel();
+            if (!"".equals(annoBodyString)) {
+                if (!"".equals(annoBodySpel) || annoBodyBytes.length != 0) {
+                    throw new IllegalArgumentException("You can only use one of bodyString/bodyBytes/bodySpel to set body on @Request");
+                }
+                httpEntity = convertRequestBody(requestBodyConverterClass, annoBodyString, computedRequestContentType, metadata, DEFAULT_STRING_FIELD_NAME);
+            } else if (annoBodyBytes.length != 0) {
+                if (!"".equals(annoBodySpel)) {
+                    throw new IllegalArgumentException("You can only use one of bodyString/bodyBytes/bodySpel to set body on @Request");
+                }
+                httpEntity = convertRequestBody(requestBodyConverterClass, annoBodyBytes, computedRequestContentType, metadata, DEFAULT_BYTES_FIELD_NAME);
+            } else {
+                Object res = SpelUtils.executeSpel(annoBodySpel, evaluationContext, Object.class);
+                httpEntity = convertRequestBody(requestBodyConverterClass, res, computedRequestContentType, metadata, DEFAULT_OBJECT_FIELD_NAME);
+            }
         }
-        
-        return httpEntity;
-	}
 
-	protected HttpEntity convertRequestBody(Class<?> requestBodyConverterClass, Object source,
-			ContentType computedRequestContentType, AnnoHttpClientMetadata metadata, String formFieldName) {
+        return httpEntity;
+    }
+
+    protected HttpEntity convertRequestBody(Class<?> requestBodyConverterClass, Object source,
+                                            ContentType computedRequestContentType, AnnoHttpClientMetadata metadata, String formFieldName) {
         if (requestBodyConverterClass == AutoRequestBodyConverter.class) {
             return RequestBodyConverterCache.AUTO_REQUEST_BODY_CONVERTER.convert(source, computedRequestContentType, metadata, formFieldName);
         } else {
@@ -452,10 +452,10 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
             }
             return RequestBodyConverterCache.getAll().get(requestBodyConverterClass).convert(source, computedRequestContentType, metadata, formFieldName);
         }
-	}
+    }
 
-	protected void processContentTypeAnnotation(LinkedList<CoverableNameValuePair> existingHeades, Method method, Request requestAnno) {
-    	Annotation contentTypeAnno = null;
+    protected void processContentTypeAnnotation(LinkedList<CoverableNameValuePair> existingHeades, Method method, Request requestAnno) {
+        Annotation contentTypeAnno = null;
         for (Annotation annotation : method.getAnnotations()) {
             if (annotation.getClass().getSimpleName().startsWith("ContentType")) {
                 contentTypeAnno = annotation;
@@ -485,148 +485,148 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
             // 注意优先级，注解指定ContentType的优先级是最低的
             addCoverable(existingHeades, new CoverableNameValuePair(HTTP.CONTENT_TYPE, contentType.toString(), requestAnno.headerCoverable()));
         }
-	}
+    }
 
-	protected LinkedHashMap<String, Object> processFormFields(Parameter[] parameters, Object[] args) {
-		boolean bodyExisted = findAnnotation(parameters, Body.class);
-		LinkedHashMap<String, Object> formFields = new LinkedHashMap<>();
+    protected LinkedHashMap<String, Object> processFormFields(Parameter[] parameters, Object[] args) {
+        boolean bodyExisted = findAnnotation(parameters, Body.class);
+        LinkedHashMap<String, Object> formFields = new LinkedHashMap<>();
         for (int i = 0; i < parameters.length; i++) {
-        	if (parameters[i].isAnnotationPresent(FormField.class)) {
-        		if (parameters[i].isAnnotationPresent(FormFields.class)) {
-        			throw new IllegalArgumentException("Only can use one of @FormField/@FormFields for one parameter");
-        		}
-        		if (bodyExisted) {
-        			throw new IllegalArgumentException("@Body is exist, cannot use @FormField/@FormFileds any more because they are occupy request body both");
-        		}
-        		FormField formFieldAnno = parameters[i].getAnnotation(FormField.class);
-        		String formFieldName = formFieldAnno.value();
-        		Object formFieldValue = args[i];
-        		checkFormField(formFieldName, formFieldValue);
-        		formFields.put(formFieldName, formFieldValue);
-        	} else if (parameters[i].isAnnotationPresent(FormFields.class)) {
-        		if (parameters[i].isAnnotationPresent(FormField.class)) {
-        			throw new IllegalArgumentException("Only can use one of @FormField/@FormFields for one parameter");
-        		}
-        		if (bodyExisted) {
-        			throw new IllegalArgumentException("@Body is exist, cannot use @FormField/@FormFileds any more because they are occupy request body both");
-        		}
-        		if (!(args[i] instanceof Map)) {
-        			throw new IllegalArgumentException("@FormFields can accept Map only");
-        		}
-        		@SuppressWarnings("unchecked")
-				Map<String, Object> map = (Map<String, Object>) args[i];
-        		for (Map.Entry<String, Object> entry : map.entrySet()) {
-					String formFieldName = entry.getKey();
-					Object formFieldValue = entry.getValue();
-					checkFormField(formFieldName, formFieldValue);
-					formFields.put(formFieldName, formFieldValue);
-				}
-        	}
+            if (parameters[i].isAnnotationPresent(FormField.class)) {
+                if (parameters[i].isAnnotationPresent(FormFields.class)) {
+                    throw new IllegalArgumentException("Only can use one of @FormField/@FormFields for one parameter");
+                }
+                if (bodyExisted) {
+                    throw new IllegalArgumentException("@Body is exist, cannot use @FormField/@FormFileds any more because they are occupy request body both");
+                }
+                FormField formFieldAnno = parameters[i].getAnnotation(FormField.class);
+                String formFieldName = formFieldAnno.value();
+                Object formFieldValue = args[i];
+                checkFormField(formFieldName, formFieldValue);
+                formFields.put(formFieldName, formFieldValue);
+            } else if (parameters[i].isAnnotationPresent(FormFields.class)) {
+                if (parameters[i].isAnnotationPresent(FormField.class)) {
+                    throw new IllegalArgumentException("Only can use one of @FormField/@FormFields for one parameter");
+                }
+                if (bodyExisted) {
+                    throw new IllegalArgumentException("@Body is exist, cannot use @FormField/@FormFileds any more because they are occupy request body both");
+                }
+                if (!(args[i] instanceof Map)) {
+                    throw new IllegalArgumentException("@FormFields can accept Map only");
+                }
+                @SuppressWarnings("unchecked")
+                Map<String, Object> map = (Map<String, Object>) args[i];
+                for (Map.Entry<String, Object> entry : map.entrySet()) {
+                    String formFieldName = entry.getKey();
+                    Object formFieldValue = entry.getValue();
+                    checkFormField(formFieldName, formFieldValue);
+                    formFields.put(formFieldName, formFieldValue);
+                }
+            }
         }
-        
-        return formFields;
-	}
 
-	protected LinkedList<CoverableNameValuePair> processQueryParameters(String url, Parameter[] parameters, Object[] args, Request requestAnno, EvaluationContext evaluationContext) {
-    	LinkedList<CoverableNameValuePair> queries = new LinkedList<>();
-    	boolean queryCoverable = requestAnno.queryCoverable();
+        return formFields;
+    }
+
+    protected LinkedList<CoverableNameValuePair> processQueryParameters(String url, Parameter[] parameters, Object[] args, Request requestAnno, EvaluationContext evaluationContext) {
+        LinkedList<CoverableNameValuePair> queries = new LinkedList<>();
+        boolean queryCoverable = requestAnno.queryCoverable();
         // 5.1 处理方法参数列表中给出的请求参数
         for (int i = 0; i < parameters.length; i++) {
             Parameter parameter = parameters[i];
             Class<?> parameterType = parameter.getType();
             if (parameter.isAnnotationPresent(Query.class)) {
-            	if (parameter.isAnnotationPresent(Queries.class)) {
-            		throw new IllegalArgumentException("You can only use one of @Query & @Queries");
-            	}
-            	if (!String.class.isAssignableFrom(parameterType)) {
-                	throw new IllegalArgumentException("@Query support String type only");
+                if (parameter.isAnnotationPresent(Queries.class)) {
+                    throw new IllegalArgumentException("You can only use one of @Query & @Queries");
                 }
-            	Query queryAnno = parameter.getAnnotation(Query.class);
-            	String qKey = queryAnno.value();
-            	if (qKey == null || "".equals(qKey.trim())) {
-        			throw new IllegalArgumentException("Query parameter's key cannot be null or empty");
-        		}
-            	addCoverable(queries, new CoverableNameValuePair(qKey, (String) args[i], queryCoverable));
+                if (!String.class.isAssignableFrom(parameterType)) {
+                    throw new IllegalArgumentException("@Query support String type only");
+                }
+                Query queryAnno = parameter.getAnnotation(Query.class);
+                String qKey = queryAnno.value();
+                if (qKey == null || "".equals(qKey.trim())) {
+                    throw new IllegalArgumentException("Query parameter's key cannot be null or empty");
+                }
+                addCoverable(queries, new CoverableNameValuePair(qKey, (String) args[i], queryCoverable));
             } else if (parameter.isAnnotationPresent(Queries.class)) {
-            	if (parameter.isAnnotationPresent(Query.class)) {
-            		throw new IllegalArgumentException("You can only use one of @Query & @Queries");
-            	}
-            	if (!Map.class.isAssignableFrom(parameterType)) {
-                	throw new IllegalArgumentException("@Queries support Map<String, String> type only");
+                if (parameter.isAnnotationPresent(Query.class)) {
+                    throw new IllegalArgumentException("You can only use one of @Query & @Queries");
                 }
-            	@SuppressWarnings("unchecked")
-				Map<String, String> queryMap = (Map<String, String>) args[i];
-            	for (Map.Entry<String, String> en : queryMap.entrySet()) {
-            		String queryName = en.getKey();
-            		String queryValue = en.getValue();
-            		checkQueryParameter(queryName, queryValue);
-            		addCoverable(queries, new CoverableNameValuePair(queryName, queryValue, queryCoverable));
-            	}
+                if (!Map.class.isAssignableFrom(parameterType)) {
+                    throw new IllegalArgumentException("@Queries support Map<String, String> type only");
+                }
+                @SuppressWarnings("unchecked")
+                Map<String, String> queryMap = (Map<String, String>) args[i];
+                for (Map.Entry<String, String> en : queryMap.entrySet()) {
+                    String queryName = en.getKey();
+                    String queryValue = en.getValue();
+                    checkQueryParameter(queryName, queryValue);
+                    addCoverable(queries, new CoverableNameValuePair(queryName, queryValue, queryCoverable));
+                }
             }
         }
         // 5.2 处理@Request.queries
         String[] annoQueries = requestAnno.queries();
         for (String q : annoQueries) {
-			addCoverable(queries, getQueryParameterFromStringStyled(q, queryCoverable));
-		}
+            addCoverable(queries, getQueryParameterFromStringStyled(q, queryCoverable));
+        }
         // 5.3 处理@Request.queriesSpel
         String queriesSpel = requestAnno.queriesSpel();
         if (!"".equals(queriesSpel.trim())) {
-        	Object res = SpelUtils.executeSpel(queriesSpel, evaluationContext, Object.class);
-        	if (res instanceof Map) {
-        		@SuppressWarnings("unchecked")
-				Map<String, String> m = (Map<String, String>) res;
-        		for (Map.Entry<String, String> entry : m.entrySet()) {
-					String queryName = entry.getKey();
-					String queryValue = entry.getValue();
-					checkQueryParameter(queryName, queryValue);
-					addCoverable(queries, new CoverableNameValuePair(queryName, queryValue));
-				}
-        	} else if (res instanceof List) {
-        		@SuppressWarnings("unchecked")
-				List<Map<String, Object>> l = (List<Map<String, Object>>) res;
-        		for (Map<String, Object> map : l) {
-					String queryName = (String) map.get("name");
-					String queryValue = (String) map.get("value");
-					checkQueryParameter(queryName, queryValue);
-					boolean coverable = Boolean.parseBoolean((String) map.get("coverable"));
-					addCoverable(queries, new CoverableNameValuePair(queryName, queryValue, coverable));
-				}
-        	}
+            Object res = SpelUtils.executeSpel(queriesSpel, evaluationContext, Object.class);
+            if (res instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, String> m = (Map<String, String>) res;
+                for (Map.Entry<String, String> entry : m.entrySet()) {
+                    String queryName = entry.getKey();
+                    String queryValue = entry.getValue();
+                    checkQueryParameter(queryName, queryValue);
+                    addCoverable(queries, new CoverableNameValuePair(queryName, queryValue));
+                }
+            } else if (res instanceof List) {
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> l = (List<Map<String, Object>>) res;
+                for (Map<String, Object> map : l) {
+                    String queryName = (String) map.get("name");
+                    String queryValue = (String) map.get("value");
+                    checkQueryParameter(queryName, queryValue);
+                    boolean coverable = Boolean.parseBoolean((String) map.get("coverable"));
+                    addCoverable(queries, new CoverableNameValuePair(queryName, queryValue, coverable));
+                }
+            }
         }
-        
+
         return queries;
     }
 
-	private void checkQueryParameter(String queryName, String queryValue) {
-		if (queryName == null || "".equals(queryName.trim())) {
-			throw new IllegalArgumentException("Query parameter's key cannot be null or empty");
-		}
-		if (queryValue == null) {
-			throw new IllegalArgumentException("Query parameter's value cannot be null");
-		}
-	}
-	
-	private void checkFormField(String fieldName, Object fieldValue) {
-		if ("".equals(fieldName.trim())) {
-			throw new IllegalArgumentException("Form field name cannot be empty");
-		}
-		if (fieldValue == null) {
-			throw new IllegalArgumentException("Form field value cannot be null");
-		}
-	}
+    private void checkQueryParameter(String queryName, String queryValue) {
+        if (queryName == null || "".equals(queryName.trim())) {
+            throw new IllegalArgumentException("Query parameter's key cannot be null or empty");
+        }
+        if (queryValue == null) {
+            throw new IllegalArgumentException("Query parameter's value cannot be null");
+        }
+    }
 
-	protected RequestProxy processProxy(Request requestAnno, EvaluationContext evaluationContext) {
-		RequestProxy requestProxy = null;
+    private void checkFormField(String fieldName, Object fieldValue) {
+        if ("".equals(fieldName.trim())) {
+            throw new IllegalArgumentException("Form field name cannot be empty");
+        }
+        if (fieldValue == null) {
+            throw new IllegalArgumentException("Form field value cannot be null");
+        }
+    }
+
+    protected RequestProxy processProxy(Request requestAnno, EvaluationContext evaluationContext) {
+        RequestProxy requestProxy = null;
         String requestProxySpel = requestAnno.proxy();
         if (!"".equals(requestProxySpel)) {
-	        Object requestProxySpelResult = SpelUtils.executeSpel(requestProxySpel, evaluationContext, Object.class);
-	        if (!(requestProxySpelResult instanceof RequestProxy) || requestProxySpelResult == null) {
-	        	throw new IllegalArgumentException("proxy must return an instance of RequestProxy");
-	        } else {
-	        	requestProxy = (RequestProxy) requestProxySpelResult;
-	        }
+            Object requestProxySpelResult = SpelUtils.executeSpel(requestProxySpel, evaluationContext, Object.class);
+            if (!(requestProxySpelResult instanceof RequestProxy) || requestProxySpelResult == null) {
+                throw new IllegalArgumentException("proxy must return an instance of RequestProxy");
+            } else {
+                requestProxy = (RequestProxy) requestProxySpelResult;
+            }
         }
         return requestProxy;
-	}
+    }
 }

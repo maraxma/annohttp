@@ -40,13 +40,13 @@ public class DefaultAnnoHttpClientMetadata implements AnnoHttpClientMetadata {
         return requestArguments;
     }
 
-	@Override
-	public Class<?> getRequestMethodReturnClass() {
-		return requestMethodReturnClass;
-	}
+    @Override
+    public Class<?> getRequestMethodReturnClass() {
+        return requestMethodReturnClass;
+    }
 
-	@Override
-	public Type getRequestMethodActualType() {
-		return requestMethodRerturnActualType;
-	}
+    @Override
+    public Type getRequestMethodActualType() {
+        return requestMethodRerturnActualType;
+    }
 }

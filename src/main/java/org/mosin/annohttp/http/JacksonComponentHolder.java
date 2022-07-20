@@ -21,13 +21,14 @@ public class JacksonComponentHolder {
 
     /**
      * 获得ObjectMapper的单例。有如下参数的4个设置，设置相同的将获得相同的ObjectMapper。
-     * @param ignoreCase 忽略大小写（反序列化）
-     * @param ignoreUnknownField 允许未知的字段出现（反序列化）
-     * @param ignoreNullProperty 忽略值为NULL的字段（序列化）
+     *
+     * @param ignoreCase          忽略大小写（反序列化）
+     * @param ignoreUnknownField  允许未知的字段出现（反序列化）
+     * @param ignoreNullProperty  忽略值为NULL的字段（序列化）
      * @param capitalizeFieldName 字段首字母大写 （序列化）
      * @return @{@link JsonMapper} 实例
      */
-    public static JsonMapper getJsonMapper(boolean ignoreCase, boolean ignoreUnknownField, boolean ignoreNullProperty , boolean capitalizeFieldName) {
+    public static JsonMapper getJsonMapper(boolean ignoreCase, boolean ignoreUnknownField, boolean ignoreNullProperty, boolean capitalizeFieldName) {
         String key = ignoreCase + "|" + ignoreUnknownField + "|" + ignoreNullProperty + "|" + capitalizeFieldName;
         return OBJECT_MAPPER_CACHE.compute(key, (k, v) -> {
             try {
@@ -43,13 +44,14 @@ public class JacksonComponentHolder {
 
     /**
      * 获得XmlMapper的单例。有如下参数的4个设置，设置相同的将获得相同的XmlMapper。
-     * @param ignoreCase 忽略大小写（反序列化）
-     * @param ignoreUnknownField 允许未知的字段出现（反序列化）
-     * @param ignoreNullProperty 忽略值为NULL的字段（序列化）
+     *
+     * @param ignoreCase          忽略大小写（反序列化）
+     * @param ignoreUnknownField  允许未知的字段出现（反序列化）
+     * @param ignoreNullProperty  忽略值为NULL的字段（序列化）
      * @param capitalizeFieldName 字段首字母大写 （序列化）
      * @return @{@link XmlMapper} 实例
      */
-    public static XmlMapper getXmlMapper(boolean ignoreCase, boolean ignoreUnknownField, boolean ignoreNullProperty , boolean capitalizeFieldName) {
+    public static XmlMapper getXmlMapper(boolean ignoreCase, boolean ignoreUnknownField, boolean ignoreNullProperty, boolean capitalizeFieldName) {
         String key = ignoreCase + "|" + ignoreUnknownField + "|" + ignoreNullProperty + "|" + capitalizeFieldName;
         return XML_MAPPER_CACHE.compute(key, (k, v) -> {
             try {
@@ -62,17 +64,18 @@ public class JacksonComponentHolder {
             }
         });
     }
-    
+
     /**
      * 获得YAMLMapper的单例。有如下参数的4个设置，设置相同的将获得相同的YAMLMapper。
-     * @param ignoreCase 忽略大小写（反序列化）
-     * @param ignoreUnknownField 允许未知的字段出现（反序列化）
-     * @param ignoreNullProperty 忽略值为NULL的字段（序列化）
+     *
+     * @param ignoreCase          忽略大小写（反序列化）
+     * @param ignoreUnknownField  允许未知的字段出现（反序列化）
+     * @param ignoreNullProperty  忽略值为NULL的字段（序列化）
      * @param capitalizeFieldName 字段首字母大写 （序列化）
      * @return @{@link YAMLMapper} 实例
      */
-    public static YAMLMapper getYamlMapper(boolean ignoreCase, boolean ignoreUnknownField, boolean ignoreNullProperty , boolean capitalizeFieldName) {
-    	String key = ignoreCase + "|" + ignoreUnknownField + "|" + ignoreNullProperty + "|" + capitalizeFieldName;
+    public static YAMLMapper getYamlMapper(boolean ignoreCase, boolean ignoreUnknownField, boolean ignoreNullProperty, boolean capitalizeFieldName) {
+        String key = ignoreCase + "|" + ignoreUnknownField + "|" + ignoreNullProperty + "|" + capitalizeFieldName;
         return YAML_MAPPER_CACHE.compute(key, (k, v) -> {
             try {
                 if (v == null) {
@@ -87,10 +90,11 @@ public class JacksonComponentHolder {
 
     /**
      * 新建ObjectMapper并且设置它。
-     * @param mapperBuilder 建造者
-     * @param ignoreCase 忽略大小写（反序列化）
-     * @param ignoreUnknownField 允许未知的字段出现（反序列化）
-     * @param ignoreNullProperty 忽略值为NULL的字段（序列化）
+     *
+     * @param mapperBuilder       建造者
+     * @param ignoreCase          忽略大小写（反序列化）
+     * @param ignoreUnknownField  允许未知的字段出现（反序列化）
+     * @param ignoreNullProperty  忽略值为NULL的字段（序列化）
      * @param capitalizeFieldName 字段首字母大写 （序列化）
      */
     private static <T extends ObjectMapper> T buildAndSetObjectMapper(MapperBuilder<T, ?> mapperBuilder, boolean ignoreCase, boolean ignoreUnknownField, boolean ignoreNullProperty, boolean capitalizeFieldName) {

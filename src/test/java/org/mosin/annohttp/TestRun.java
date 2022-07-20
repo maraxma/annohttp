@@ -1,5 +1,10 @@
 package org.mosin.annohttp;
 
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Map;
+
 import org.junit.jupiter.api.Test;
 import org.mosin.annohttp.annotation.ContentTypeApplicationJson;
 import org.mosin.annohttp.annotation.Request;
@@ -7,15 +12,8 @@ import org.mosin.annohttp.http.AnnoHttpClient;
 import org.mosin.annohttp.http.HttpMethod;
 import org.mosin.annohttp.http.PreparingRequest;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Arrays;
-import java.util.Map;
-
 public class TestRun {
-	
+
     @Test
     void run() throws IOException {
         R r = AnnoHttpClient.create(R.class);
@@ -46,6 +44,7 @@ public class TestRun {
 
         /**
          * 如果以 {@link PreparingRequest} 来接受返回，那么可以在后面再实施真正请求。
+         *
          * @return
          */
         @Request(method = HttpMethod.POST,

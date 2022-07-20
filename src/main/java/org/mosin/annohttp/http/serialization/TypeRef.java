@@ -10,6 +10,7 @@ import java.lang.reflect.Type;
  * Mara.X.Ma 注：{@link TypeRef} 用于对泛型类型的引用进行保持，避免被擦除。对于泛型中指定的类型，在编译期通过校验后会被擦除，
  * 但有个例外，那就是子类如果实现了泛型接口（父类），并且父接口（类）指定了具体的泛型类型，那么子类对父类的泛型类型将不会被擦除，
  * 可以在运行时通过反射获得。究其原因，是因为子类的实现强绑定了泛型类型，编译器不能将其擦除，否则会导致无法生成子类。
+ *
  * @author jackson-databind Mara.X.Ma copied
  * @since 1.0.0 2022-07-16
  */
@@ -44,10 +45,13 @@ public class TypeRef<T> implements Comparable<TypeRef<T>> {
         _type = type;
     }
 
-    public Type getType() { return _type; }
+    public Type getType() {
+        return _type;
+    }
 
     public static <T> TypeRef<T> fromType(Type type) {
-        return new TypeRef<>(type) {};
+        return new TypeRef<>(type) {
+        };
     }
 
     /**

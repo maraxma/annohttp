@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * {@link HttpClientBuilder} 增强器，为 ClientBuilder 添加代理支持。
+ *
  * @author Mara.X.Ma
  * @since 1.0.0 2022-07-08
  */
@@ -31,7 +32,7 @@ public class HttpClientBuilderEnhancer {
             builder = new SSLContextBuilder();
             // 全部信任 不做身份鉴定
             builder.loadTrustMaterial(null, (chain, authType) -> true);
-            sslsf = new HttpsConnectionSocketFactory(builder.build(), new String[] {"SSLv3", "TLSv1", "TLSv1.2"}, null, NoopHostnameVerifier.INSTANCE);
+            sslsf = new HttpsConnectionSocketFactory(builder.build(), new String[]{"SSLv3", "TLSv1", "TLSv1.2"}, null, NoopHostnameVerifier.INSTANCE);
         } catch (Exception e) {
             throw new RuntimeException("Cannot create http client", e);
         }

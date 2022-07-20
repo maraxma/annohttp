@@ -23,10 +23,10 @@ public class InputStreamResponseBodyConverter implements ResponseBodyConverter {
         }).orElse(null);
     }
 
-	@Override
-	public boolean canConvert(HttpResponse httpResponse, AnnoHttpClientMetadata metadata, ContentType computedResponseContentType, Charset computedResponseCharset) {
-		return metadata.getRequestMethodActualType() instanceof @SuppressWarnings("rawtypes") Class clazz && InputStream.class.isAssignableFrom(clazz)
-				&& httpResponse.getEntity() != null && httpResponse.getEntity().isStreaming();
-	}
+    @Override
+    public boolean canConvert(HttpResponse httpResponse, AnnoHttpClientMetadata metadata, ContentType computedResponseContentType, Charset computedResponseCharset) {
+        return metadata.getRequestMethodActualType() instanceof @SuppressWarnings("rawtypes")Class clazz && InputStream.class.isAssignableFrom(clazz)
+                && httpResponse.getEntity() != null && httpResponse.getEntity().isStreaming();
+    }
 
 }

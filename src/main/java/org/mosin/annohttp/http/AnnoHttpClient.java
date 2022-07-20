@@ -23,10 +23,11 @@ import org.mosin.annohttp.http.response.converter.ResponseBodyConverterCache;
  * @since 1.0.0 2022-07-08
  */
 public final class AnnoHttpClient {
-	
+
     /**
      * 为请求接口创建具体的实例。创建好后，你将可以直接调用。
-     * @param <T> 实例接口类型
+     *
+     * @param <T>           实例接口类型
      * @param annoHttpClass 请求接口类
      * @return 接口实例
      */
@@ -34,25 +35,27 @@ public final class AnnoHttpClient {
     public static <T> T create(Class<T> annoHttpClass) {
         // 动态代理
         // 都是基于接口的，因此使用JDK自带的动态代理即可
-        return (T) Proxy.newProxyInstance(annoHttpClass.getClassLoader(), new Class<?>[] {annoHttpClass}, InvocationHandlerHolder.INSTANCE);
+        return (T) Proxy.newProxyInstance(annoHttpClass.getClassLoader(), new Class<?>[]{annoHttpClass}, InvocationHandlerHolder.INSTANCE);
     }
-    
+
     /**
      * 注册请求体转换器。你可以定义自己的转换器，然后使用默认的 {@link AutoRequestBodyConverter} 来查找并应用。
-     * <p>你也可以直接将自己的转换器写到 {@link Request#requestBodyConverter()} 上。 
+     * <p>你也可以直接将自己的转换器写到 {@link Request#requestBodyConverter()} 上。
+     *
      * @param requestBodyConverters 请求体转换器
      */
     public static void registerRequestBodyConverter(RequestBodyConverter... requestBodyConverters) {
-    	RequestBodyConverterCache.addUserConverters(requestBodyConverters);
+        RequestBodyConverterCache.addUserConverters(requestBodyConverters);
     }
-    
+
     /**
      * 注册响应体转换器。你可以定义自己的转换器，然后使用默认的 {@link AutoResponseBodyConverter} 来查找并应用。
-     * <p>你也可以直接将自己的转换器写到 {@link Request#responseBodyConverter()} 上。 
+     * <p>你也可以直接将自己的转换器写到 {@link Request#responseBodyConverter()} 上。
+     *
      * @param responseBodyConverters 请求体转换器
      */
     public static void registerResponseBodyConverter(ResponseBodyConverter... responseBodyConverters) {
-    	ResponseBodyConverterCache.addUserConverters(responseBodyConverters);
+        ResponseBodyConverterCache.addUserConverters(responseBodyConverters);
     }
 
     private static class InvocationHandlerHolder {

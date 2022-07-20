@@ -13,9 +13,9 @@ public class HttpResponseResponseBodyConverter implements ResponseBodyConverter 
         return httpResponse;
     }
 
-	@Override
-	public boolean canConvert(HttpResponse httpResponse, AnnoHttpClientMetadata metadata, ContentType computedResponseContentType, Charset computedResponseCharset) {
-		return metadata.getRequestMethodActualType() instanceof @SuppressWarnings("rawtypes") Class clazz && HttpResponse.class.isAssignableFrom(clazz);
-	}
+    @Override
+    public boolean canConvert(HttpResponse httpResponse, AnnoHttpClientMetadata metadata, ContentType computedResponseContentType, Charset computedResponseCharset) {
+        return metadata.getRequestMethodActualType() instanceof @SuppressWarnings("rawtypes")Class clazz && HttpResponse.class.isAssignableFrom(clazz);
+    }
 
 }

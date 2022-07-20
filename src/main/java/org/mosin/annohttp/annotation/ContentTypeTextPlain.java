@@ -4,6 +4,7 @@ import java.lang.annotation.*;
 
 /**
  * 快速请求头设定。附加 Content-Type: text/plain; charset=ISO-8859-1（{@link org.apache.http.entity.ContentType#TEXT_PLAIN}） 请求头。
+ *
  * @author Mara.X.Ma
  * @since 1.0.0 2022-07-08
  */

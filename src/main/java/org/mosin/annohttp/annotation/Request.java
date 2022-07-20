@@ -193,6 +193,7 @@ public @interface Request {
      * 设定响应的字符编码。当需要将响应流转换为String时需要此参数。
      * <p>默认是"UTF-8"。</p>
      * <p>此参数受 {@link #preferUsingResponseCharset()} 影响。</p>
+     *
      * @see #preferUsingResponseCharset()
      */
     String responseCharset() default "UTF-8";
@@ -201,13 +202,15 @@ public @interface Request {
      * 是否优先使用响应中给出的字符编码。
      * <p>设定为true时，将优先使用响应中附带的字符编码，如果响应中不存在才使用 {@link #responseCharset()} 设定的值。
      * <p>默认是true。当需要强制使用指定的字符编码的时候请将此参数设定为false，并且设定好 {@link #responseCharset()} 的值。</p>
+     *
      * @see #responseCharset()
      */
     boolean preferUsingResponseCharset() default true;
-    
+
     /**
      * 指定请求体转换器。
      * <p>默认是内置的 {@link AutoRequestBodyConverter}。</p>
+     *
      * @see RequestBodyConverter
      */
     Class<? extends RequestBodyConverter> requestBodyConverter() default AutoRequestBodyConverter.class;
@@ -215,6 +218,7 @@ public @interface Request {
     /**
      * 指定响应转换器。
      * <p>默认是内置的 {@link AutoResponseBodyConverter}。</p>
+     *
      * @see ResponseBodyConverter
      */
     Class<? extends ResponseBodyConverter> responseBodyConverter() default AutoResponseBodyConverter.class;
@@ -227,6 +231,7 @@ public @interface Request {
     /**
      * 指定响应体的内容类型。
      * <p>此设定受 {@link #preferUsingResponseContentType()} 影响。</p>
+     *
      * @see #preferUsingResponseContentType()
      */
     String responseContentType() default "application/json";

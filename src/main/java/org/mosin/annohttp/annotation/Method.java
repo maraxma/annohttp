@@ -13,5 +13,5 @@ import org.mosin.annohttp.http.HttpMethod;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
 public @interface Method {
-	
+
 }
