@@ -38,7 +38,9 @@ public class MapRequestBodyConverter implements RequestBodyConverter {
             } else {
                 final Charset charset = contentType.getCharset() == null ? DEFAULT_STRING_CHARSET : contentType.getCharset();
                 String userMimeType = contentType.getMimeType();
-                if (ContentType.APPLICATION_XML.getMimeType().equalsIgnoreCase(userMimeType)
+                if (ContentType.APPLICATION_JSON.getMimeType().equalsIgnoreCase(userMimeType)) {
+                	httpEntity = new StringEntity(jsonMapper.writeValueAsString(source), contentType.withCharset(charset));
+                } else if (ContentType.APPLICATION_XML.getMimeType().equalsIgnoreCase(userMimeType)
                         || ContentType.TEXT_XML.getMimeType().equalsIgnoreCase(userMimeType)) {
                     tag = "xml";
                     httpEntity = new StringEntity(xmlMapper.writeValueAsString(source), contentType.withCharset(charset));

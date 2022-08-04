@@ -20,6 +20,8 @@ import org.mosin.annohttp.http.exception.NoApplicableResponseBodyConverterExcept
 import org.mosin.annohttp.http.exception.RequestFailedException;
 import org.mosin.annohttp.http.exception.UnexpectedResponseException;
 import org.mosin.annohttp.http.method.*;
+import org.mosin.annohttp.http.protocol.ProtocolHandler;
+import org.mosin.annohttp.http.protocol.ProtocolHandlerMapping;
 import org.mosin.annohttp.http.proxy.HttpClientProxyContext;
 import org.mosin.annohttp.http.proxy.RequestProxy;
 import org.mosin.annohttp.http.request.converter.MapRequestBodyConverter;
@@ -51,16 +53,16 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-class DefaultPreparingRequest<T> implements PreparingRequest<T> {
+non-sealed class DefaultPreparingRequest<T> implements PreparingRequest<T> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultPreparingRequest.class);
 
-    protected final HttpMethod requestType;
+    protected HttpMethod requestType;
 
     protected String url;
 
-    protected final HttpEntity httpEntity;
-    protected final RequestProxy requestProxy;
+    protected HttpEntity httpEntity;
+    protected RequestProxy requestProxy;
 
     protected final List<CoverableNameValuePair> headers;
     protected final List<CoverableNameValuePair> queries;
@@ -153,7 +155,7 @@ class DefaultPreparingRequest<T> implements PreparingRequest<T> {
         try {
             httpResponse = executeRequest();
         } catch (Exception e) {
-            throw new RequestFailedException("", e);
+            throw new RequestFailedException("Request Failed for url " + url, e);
         }
 
         // 从这里开始便有了 httpResponse，出现任何异常应当释放 HttpResponse 面的 Entity 所占用的资源
@@ -222,10 +224,8 @@ class DefaultPreparingRequest<T> implements PreparingRequest<T> {
     }
 
     public CloseableHttpClient getHttpClient() {
-        if (userHttpClientBuilder != null) {
-            return userHttpClientBuilder.build();
-        }
-        return HttpComponentHolder.getHttpClientInstance();
+        buildHttpClient();
+        return httpClient;
     }
 
     @Override
@@ -236,6 +236,37 @@ class DefaultPreparingRequest<T> implements PreparingRequest<T> {
                 throw new IllegalArgumentException("Url cannot be null or empty");
             }
             url = userUrl;
+        }
+        return this;
+    }
+
+    @Override
+    public PreparingRequest<T> customRequestProxy(Function<RequestProxy, RequestProxy> proxyMapping) {
+        if (proxyMapping != null) {
+            RequestProxy userProxy = proxyMapping.apply(requestProxy);
+            if (userProxy != null) {
+                requestProxy = userProxy;
+            }
+        }
+        return this;
+    }
+
+    @Override
+    public PreparingRequest<T> customHttpMethod(Function<HttpMethod, HttpMethod> httpMethodMapping) {
+        if (httpMethodMapping != null) {
+            HttpMethod userMethod = httpMethodMapping.apply(requestType);
+            if (userMethod == null) {
+                throw new IllegalArgumentException("HttpMethod cannot be null");
+            }
+            requestType = userMethod;
+        }
+        return this;
+    }
+
+    @Override
+    public PreparingRequest<T> customRequestBody(Function<HttpEntity, HttpEntity> requestBodyMapping) {
+        if (requestBodyMapping != null) {
+            httpEntity = requestBodyMapping.apply(httpEntity);
         }
         return this;
     }
@@ -317,6 +348,10 @@ class DefaultPreparingRequest<T> implements PreparingRequest<T> {
             computedUri = URI.create(computedUrl);
         }
 
+        String protocol = url.substring(0, url.indexOf("://")).trim().toLowerCase();
+        ProtocolHandler protocolHandler = ProtocolHandlerMapping.getHandler(protocol);
+        protocolHandler.handle(metadata, this);
+
         // 处理Method
         HttpEntityEnclosingRequestBase httpUriRequest;
         if (requestType == HttpMethod.GET) {
@@ -339,6 +374,44 @@ class DefaultPreparingRequest<T> implements PreparingRequest<T> {
             throw new IllegalArgumentException("Unsupported request type: " + requestType);
         }
 
+        // 处理 Body 和 表单
+        if (httpEntity != null) {
+            if (formFields != null && !formFields.isEmpty()) {
+                throw new IllegalArgumentException("You can only set body or formFields because they are occupy request body both");
+            }
+        } else {
+            ContentType contentType = null;
+            for (CoverableNameValuePair coverableNameValuePair : headers) {
+                if (coverableNameValuePair.getName().equalsIgnoreCase(HTTP.CONTENT_TYPE)) {
+                    contentType = ContentType.parse(coverableNameValuePair.getValue());
+                    break;
+                }
+            }
+            if (formFields != null && !formFields.isEmpty()) {
+                if (contentType == null) {
+                    // 如果用户未设定Content-Type，那么自动设定
+                    // 如果用户设定了，那么就要校验，在有Form的情况下，Content-Type只能设定为urlencoded或multipart-form-data
+                    boolean otherTypeFound = formFields.values().stream().anyMatch(e -> !(e instanceof String));
+                    if (otherTypeFound) {
+                        contentType = ContentType.MULTIPART_FORM_DATA;
+                        headers.add(new CoverableNameValuePair(HTTP.CONTENT_TYPE, ContentType.MULTIPART_FORM_DATA.toString()));
+                    } else {
+                        contentType = ContentType.APPLICATION_FORM_URLENCODED;
+                        headers.add(new CoverableNameValuePair(HTTP.CONTENT_TYPE, ContentType.APPLICATION_FORM_URLENCODED.toString()));
+                    }
+                } else {
+                    if (!ContentType.APPLICATION_FORM_URLENCODED.getMimeType().equalsIgnoreCase(contentType.getMimeType())
+                            && !ContentType.MULTIPART_FORM_DATA.getMimeType().equalsIgnoreCase(contentType.getMimeType())) {
+                        throw new IllegalArgumentException("If you are using @FormField or @FormFields, the content-type must be set to urlencoded or multipart-data. Or you can ignore content-type, annohttp will set it automatically");
+                    }
+                }
+                httpEntity = RequestBodyConverterCache.getAll().get(MapRequestBodyConverter.class).convert(formFields,contentType, metadata, null);
+            }
+        }
+        if (httpEntity != null) {
+            httpUriRequest.setEntity(httpEntity);
+        }
+
         // 处理请求头
         if (headers != null) {
             Header[] finalHeaders = headers
@@ -346,39 +419,6 @@ class DefaultPreparingRequest<T> implements PreparingRequest<T> {
                     .map(e -> new BasicHeader(e.getName(), e.getValue())).toList()
                     .toArray(new Header[0]);
             httpUriRequest.setHeaders(finalHeaders);
-        }
-
-        // 处理Body 和 表单
-        ContentType contentType = null;
-        for (CoverableNameValuePair coverableNameValuePair : headers) {
-            if (coverableNameValuePair.getName().equalsIgnoreCase(HTTP.CONTENT_TYPE)) {
-                contentType = ContentType.parse(coverableNameValuePair.getValue());
-                break;
-            }
-        }
-        if (contentType == null) {
-            // 如果用户未设定Content-Type，那么自动设定
-            // 如果用户设定了，那么就要校验，在有Form的情况下，Content-Type只能设定为urlencoded或multipart-form-data
-            boolean otherTypeFound = formFields.values().stream().anyMatch(e -> !(e instanceof String));
-            if (otherTypeFound) {
-                contentType = ContentType.MULTIPART_FORM_DATA;
-                headers.add(new CoverableNameValuePair(HTTP.CONTENT_TYPE, ContentType.MULTIPART_FORM_DATA.toString()));
-            } else {
-                contentType = ContentType.APPLICATION_FORM_URLENCODED;
-                headers.add(new CoverableNameValuePair(HTTP.CONTENT_TYPE, ContentType.APPLICATION_FORM_URLENCODED.toString()));
-            }
-        } else {
-            if (!ContentType.APPLICATION_FORM_URLENCODED.getMimeType().equalsIgnoreCase(contentType.getMimeType())
-                    || !ContentType.MULTIPART_FORM_DATA.getMimeType().equalsIgnoreCase(contentType.getMimeType())) {
-                throw new IllegalArgumentException("If you are using @FormField or @FormFields, the content-type must be set to urlencoded or multipart-data. Or you can ignore content-type, annohttp will set it automatically");
-            }
-        }
-        if (httpEntity != null) {
-            httpUriRequest.setEntity(httpEntity);
-        } else {
-            if (formFields != null) {
-                RequestBodyConverterCache.getAll().get(MapRequestBodyConverter.class).convert(httpUriRequest, contentType, metadata, computedUrl);
-            }
         }
 
         // 处理超时设置
@@ -438,6 +478,10 @@ class DefaultPreparingRequest<T> implements PreparingRequest<T> {
             responseVisitor.visit(userHttpClientBuilder == null ? HttpComponentHolder.getHttpClientBuilderInstance() : userHttpClientBuilder, httpClient, this, httpResponse, requestException);
         } catch (Throwable e) {
             throw new RuntimeException("Something wrong with ResponseVisitor '" + responseVisitor + "'", e);
+        }
+
+        if (requestException != null) {
+            throw new RuntimeException(requestException);
         }
 
         // 处理successCondition

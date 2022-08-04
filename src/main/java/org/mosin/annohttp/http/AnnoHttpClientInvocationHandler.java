@@ -25,6 +25,7 @@ import org.mosin.annohttp.annotation.FormFields;
 import org.mosin.annohttp.annotation.Headers;
 import org.mosin.annohttp.annotation.PathVar;
 import org.mosin.annohttp.annotation.PathVars;
+import org.mosin.annohttp.annotation.Proxy;
 import org.mosin.annohttp.annotation.Queries;
 import org.mosin.annohttp.annotation.Query;
 import org.mosin.annohttp.annotation.Request;
@@ -46,14 +47,18 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-
-        // 生成PreparingRequest实例，视情况使用其发起请求或者直接返回它
-        // 需要构造PreparingRequest实例，延迟请求
+    	
+    	Request requestAnno = method.getAnnotation(Request.class);
+    	
+    	if (requestAnno == null) {
+    		throw new IllegalArgumentException("Method in an annohttp service client must be decorated by @Request");
+    	}
+    	
         Type genericType = method.getGenericReturnType();
         Class<?> returnType = method.getReturnType();
         PreparingRequest<?> preparingRequest;
         DefaultAnnoHttpClientMetadata metadata = new DefaultAnnoHttpClientMetadata();
-        Request requestAnno = method.getAnnotation(Request.class);
+        
         Parameter[] parameters = method.getParameters();
         EvaluationContext evaluationContext = SpelUtils.prepareSpelContext(args);
 
@@ -64,7 +69,7 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
         String computedUrl = processUrl(requestAnno, parameters, args, evaluationContext);
 
         /*       3 处理PathVars     */
-        Map<String, String> pathVars = processPathVars(requestAnno, parameters, args);
+        Map<String, String> pathVars = processPathVars(parameters, args);
 
         /*       4 处理请求头       */
         // 注意优先级，参数请求头 > @Request注解请求头 > @ContentType请求头
@@ -75,7 +80,7 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
         List<CoverableNameValuePair> queries = processQueryParameters(computedUrl, parameters, args, requestAnno, evaluationContext);
 
         /*       6 处理代理设置     */
-        RequestProxy requestProxy = processProxy(requestAnno, evaluationContext);
+        RequestProxy requestProxy = processProxy(requestAnno, parameters, args, evaluationContext);
 
         /*       7 处理Body      */
         // Body可以是各种类型的，annohttp会根据不同的类型采取不同的策略
@@ -185,13 +190,13 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
 
     private void addCoverable(LinkedList<CoverableNameValuePair> existing, CoverableNameValuePair incoming) {
         if (incoming == null) {
-            throw new IllegalArgumentException("Incoming coverable header/query paratmeter cannot be null");
+            throw new IllegalArgumentException("Incoming coverable header/query parameter cannot be null");
         }
         Iterator<CoverableNameValuePair> iter = existing.iterator();
         while (iter.hasNext()) {
             CoverableNameValuePair existingCoverable = iter.next();
-            NameValuePair existingNameValuePair = (NameValuePair) existingCoverable;
-            NameValuePair incomingNameValuePair = (NameValuePair) incoming;
+            NameValuePair existingNameValuePair = existingCoverable;
+            NameValuePair incomingNameValuePair = incoming;
             if (existingNameValuePair.getName().equalsIgnoreCase(incomingNameValuePair.getName())) {
                 if (existingCoverable.isCoverable()) {
                     iter.remove();
@@ -244,7 +249,7 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
         return computedMethod;
     }
 
-    protected Map<String, String> processPathVars(Request requestAnno, Parameter[] parameters, Object[] args) {
+    protected Map<String, String> processPathVars(Parameter[] parameters, Object[] args) {
         Map<String, String> pathVars = new HashMap<>();
         for (int i = 0; i < parameters.length; i++) {
             Parameter parameter = parameters[i];
@@ -273,10 +278,10 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
                     key = key == null ? null : key.trim();
                     value = value == null ? null : value.trim();
                     if (key == null || "".equals(key)) {
-                        throw new IllegalArgumentException("pathVar's name caonnt be null or empty");
+                        throw new IllegalArgumentException("PathVar's name cannot be null or empty");
                     }
                     if (value == null || "".equals(value)) {
-                        throw new IllegalArgumentException("pathVar's value caonnt be null or empty");
+                        throw new IllegalArgumentException("PathVar's value cannot be null or empty");
                     }
                     pathVarsMap.put(key, value);
                 }
@@ -454,7 +459,7 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
         }
     }
 
-    protected void processContentTypeAnnotation(LinkedList<CoverableNameValuePair> existingHeades, Method method, Request requestAnno) {
+    protected void processContentTypeAnnotation(LinkedList<CoverableNameValuePair> existingHeaders, Method method, Request requestAnno) {
         Annotation contentTypeAnno = null;
         for (Annotation annotation : method.getAnnotations()) {
             if (annotation.getClass().getSimpleName().startsWith("ContentType")) {
@@ -483,7 +488,7 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
             }
 
             // 注意优先级，注解指定ContentType的优先级是最低的
-            addCoverable(existingHeades, new CoverableNameValuePair(HTTP.CONTENT_TYPE, contentType.toString(), requestAnno.headerCoverable()));
+            addCoverable(existingHeaders, new CoverableNameValuePair(HTTP.CONTENT_TYPE, contentType.toString(), requestAnno.headerCoverable()));
         }
     }
 
@@ -496,7 +501,7 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
                     throw new IllegalArgumentException("Only can use one of @FormField/@FormFields for one parameter");
                 }
                 if (bodyExisted) {
-                    throw new IllegalArgumentException("@Body is exist, cannot use @FormField/@FormFileds any more because they are occupy request body both");
+                    throw new IllegalArgumentException("@Body is exist, cannot use @FormField/@FormFields any more because they are occupy request body both");
                 }
                 FormField formFieldAnno = parameters[i].getAnnotation(FormField.class);
                 String formFieldName = formFieldAnno.value();
@@ -508,7 +513,7 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
                     throw new IllegalArgumentException("Only can use one of @FormField/@FormFields for one parameter");
                 }
                 if (bodyExisted) {
-                    throw new IllegalArgumentException("@Body is exist, cannot use @FormField/@FormFileds any more because they are occupy request body both");
+                    throw new IllegalArgumentException("@Body is exist, cannot use @FormField/@FormFields any more because they are occupy request body both");
                 }
                 if (!(args[i] instanceof Map)) {
                     throw new IllegalArgumentException("@FormFields can accept Map only");
@@ -616,16 +621,37 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
         }
     }
 
-    protected RequestProxy processProxy(Request requestAnno, EvaluationContext evaluationContext) {
+    protected RequestProxy processProxy(Request requestAnno, Parameter[] parameters, Object[] args, EvaluationContext evaluationContext) {
         RequestProxy requestProxy = null;
         String requestProxySpel = requestAnno.proxy();
-        if (!"".equals(requestProxySpel)) {
-            Object requestProxySpelResult = SpelUtils.executeSpel(requestProxySpel, evaluationContext, Object.class);
-            if (!(requestProxySpelResult instanceof RequestProxy) || requestProxySpelResult == null) {
-                throw new IllegalArgumentException("proxy must return an instance of RequestProxy");
-            } else {
-                requestProxy = (RequestProxy) requestProxySpelResult;
-            }
+        int parameterProxyIndex = -1;
+        for (int i = 0; i < parameters.length; i++) {
+			if (parameters[i].isAnnotationPresent(Proxy.class)) {
+				if (parameterProxyIndex != -1) {
+					// 已经找到了一个Proxy
+					throw new IllegalArgumentException("You cannot use more than 1 proxy represented by @Request.proxy or @Proxy)");
+				} else {
+					parameterProxyIndex = i;
+				}
+			}
+		}
+        if (parameterProxyIndex != -1) {
+        	if (!"".equals(requestProxySpel)) {
+        		throw new IllegalArgumentException("You cannot use more than 1 proxy represented by @Request.proxy or @Proxy)");
+        	}
+        	if (!(RequestProxy.class.isAssignableFrom(parameters[parameterProxyIndex].getType()))) {
+        		throw new IllegalArgumentException("@Proxy must represent a RequestProxy type and you used type '" + parameters[parameterProxyIndex].getType().getName() + "'");
+        	}
+        	requestProxy = (RequestProxy) args[parameterProxyIndex];
+        } else {
+	        if (!"".equals(requestProxySpel)) {
+	            Object requestProxySpelResult = SpelUtils.executeSpel(requestProxySpel, evaluationContext, Object.class);
+	            if (!(requestProxySpelResult instanceof RequestProxy) || requestProxySpelResult == null) {
+	                throw new IllegalArgumentException("proxy must return an instance of RequestProxy");
+	            } else {
+	                requestProxy = (RequestProxy) requestProxySpelResult;
+	            }
+	        }
         }
         return requestProxy;
     }

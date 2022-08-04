@@ -18,17 +18,16 @@ public class BaseResponseVisitor implements ResponseVisitor {
             } catch (Exception e) {
                 throw e;
             }
-            // 无论如何，确保有异常向上抛出
-            throw exception;
-        }
-        StatusLine statusLine = response.getStatusLine();
-        int statusCode = statusLine.getStatusCode();
-        if (statusCode < 200 || statusCode >= 300) {
-            onNot2xxResponse(httpClientBuilder, httpClient, serviceClient, response);
         } else {
-            on2xxResponse(httpClientBuilder, httpClient, serviceClient, response);
+            StatusLine statusLine = response.getStatusLine();
+            int statusCode = statusLine.getStatusCode();
+            if (statusCode < 200 || statusCode >= 300) {
+                onNot2xxResponse(httpClientBuilder, httpClient, serviceClient, response);
+            } else {
+                on2xxResponse(httpClientBuilder, httpClient, serviceClient, response);
+            }
+            onComplete(httpClientBuilder, httpClient, serviceClient, response);
         }
-        onComplete(httpClientBuilder, httpClient, serviceClient, response);
     }
 
     /**

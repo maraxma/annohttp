@@ -5,8 +5,6 @@ import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 
-import java.util.Map;
-
 public class SpelUtils {
 
     private static final SpelExpressionParser SPEL_PARSER = new SpelExpressionParser();

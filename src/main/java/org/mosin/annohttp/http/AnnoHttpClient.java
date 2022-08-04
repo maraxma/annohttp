@@ -3,6 +3,8 @@ package org.mosin.annohttp.http;
 import java.lang.reflect.Proxy;
 
 import org.mosin.annohttp.annotation.Request;
+import org.mosin.annohttp.http.protocol.ProtocolHandler;
+import org.mosin.annohttp.http.protocol.ProtocolHandlerMapping;
 import org.mosin.annohttp.http.request.converter.AutoRequestBodyConverter;
 import org.mosin.annohttp.http.request.converter.RequestBodyConverter;
 import org.mosin.annohttp.http.request.converter.RequestBodyConverterCache;
@@ -56,6 +58,14 @@ public final class AnnoHttpClient {
      */
     public static void registerResponseBodyConverter(ResponseBodyConverter... responseBodyConverters) {
         ResponseBodyConverterCache.addUserConverters(responseBodyConverters);
+    }
+
+    /**
+     * 注册自定义的协议处理器。
+     * @param protocolHandlers 协议处理器
+     */
+    public static void registerProtocolHandlers(ProtocolHandler... protocolHandlers) {
+        ProtocolHandlerMapping.addMappings(protocolHandlers);
     }
 
     private static class InvocationHandlerHolder {

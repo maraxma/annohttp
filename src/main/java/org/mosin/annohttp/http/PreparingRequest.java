@@ -1,5 +1,17 @@
 package org.mosin.annohttp.http;
 
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.mosin.annohttp.annotation.Request;
+import org.mosin.annohttp.http.exception.ConversionException;
+import org.mosin.annohttp.http.exception.RequestFailedException;
+import org.mosin.annohttp.http.exception.UnexpectedResponseException;
+import org.mosin.annohttp.http.proxy.RequestProxy;
+import org.mosin.annohttp.http.response.converter.ResponseBodyConverter;
+
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -8,22 +20,20 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.mosin.annohttp.annotation.Request;
-import org.mosin.annohttp.http.exception.ConversionException;
-import org.mosin.annohttp.http.exception.RequestFailedException;
-import org.mosin.annohttp.http.exception.UnexpectedResponseException;
-
 /**
  * 代表一个已经准备好的请求。
- *
+ * <p>在接口中任何标注了 @{@link Request} 的抽象方法除了可以使用期望的实体类来作为返回，还可以使用此接口类作为返回。
+ * <p>使用此接口作为返回意味着该方法在被调用的时候请求不会立即进行HTTP请求，而是生成一个 {@link PreparingRequest} 对象供用户使用。
+ * <p>{@link PreparingRequest} 对象提供了一些在请求前做最后准备的方法，供用户再次请求头、请求参数等，同时提供同步请求、异步请求、可操作对象请求等方法。
+ * <p>如果你的请求方法期望的是通过异步的手段请求，亦或是在请求前需要设定动态计算的参数，又或者是你想要得到方便转换的的响应对象，那么你可以将此作为请求方法的返回类型。
+ * <p>{@link PreparingRequest} 的泛型参数T需要指定你期望的返回结果，它可以是 {@link String}、{@link Map}、{@link HttpResponse}、{@link InputStream}、Java Bean
+ * 甚至是任何类型，annohttp将使用内置的转换器（{@link ResponseBodyConverter}）尝试将其转换。当然，你也可以自定义你的转换器。
+ * 
  * @param <T> 期望返回的数据类型。
  * @author Mara.X.Ma
- * @since 2022-07-08
+ * @since 1.0.0 2022-07-08
  */
-public interface PreparingRequest<T> {
+public sealed interface PreparingRequest<T> permits DefaultPreparingRequest {
 
     /**
      * 自定义HttpClient相关的配置。需要用户自己提供一个HttpClientBuilder实例。在配置完成后将以用户提供的建造者生产新HttpClient发起请求。</p>
@@ -75,6 +85,27 @@ public interface PreparingRequest<T> {
      * @return {@link PreparingRequest} 本身
      */
     PreparingRequest<T> customRequestUrl(Function<String, String> urlMapping);
+
+    /**
+     * 自定义请求代理。
+     * @param proxyMapping 代理映射器函数，函数提供原有的代理（如果有的话，否则是null），函数需要你返回你定义的代理，可以是null。是null时代表不设定代理
+     * @return {@link PreparingRequest} 本身
+     */
+    PreparingRequest<T> customRequestProxy(Function<RequestProxy, RequestProxy> proxyMapping);
+
+    /**
+     * 自定义请求方法。
+     * @param httpMethodMapping 请求方法映射函数，函数提供原有的请求方法，要求返回新的额请求方法，不能返回null
+     * @return {@link PreparingRequest} 本身
+     */
+    PreparingRequest<T> customHttpMethod(Function<HttpMethod, HttpMethod> httpMethodMapping);
+
+    /**
+     * 自定义请求体。
+     * @param requestBodyMapping 请求体映射函数。函数提供原有的请求体，要求返回新的请求体，可以返回null，返回null代表不再附加请求体
+     * @return {@link PreparingRequest} 本身
+     */
+    PreparingRequest<T> customRequestBody(Function<HttpEntity, HttpEntity> requestBodyMapping);
 
     /**
      * 自定义请求设置
