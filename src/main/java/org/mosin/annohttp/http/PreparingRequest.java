@@ -33,7 +33,7 @@ import java.util.function.Supplier;
  * @author Mara.X.Ma
  * @since 1.0.0 2022-07-08
  */
-public sealed interface PreparingRequest<T> permits DefaultPreparingRequest<T> {
+public sealed interface PreparingRequest<T> permits DefaultPreparingRequest {
 
     /**
      * 自定义HttpClient相关的配置。需要用户自己提供一个HttpClientBuilder实例。在配置完成后将以用户提供的建造者生产新HttpClient发起请求。</p>
