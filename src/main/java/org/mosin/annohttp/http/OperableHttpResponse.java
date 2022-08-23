@@ -230,6 +230,12 @@ public class OperableHttpResponse implements HttpResponse, Sequencable {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
+    public <T> T asJavaSerializedSequenceToObject(Class<T> objectClass) {
+        return (T) asJavaSerializedSequenceToObject();
+    }
+
+    @Override
     public Convertible asXmlConvertible() {
         return new XmlConvertible(httpResponse, DEFAULT_CHARSET);
     }
