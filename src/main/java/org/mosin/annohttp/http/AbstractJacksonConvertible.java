@@ -10,14 +10,14 @@ import org.mosin.annohttp.http.serialization.TypeRef;
 
 import java.util.*;
 
-public abstract class AbstractJacksonConvertable extends AbstractConvertable {
+public abstract class AbstractJacksonConvertible extends AbstractConvertible {
 
     protected ObjectMapper objectMapper;
     protected final String objectString;
 
     private static final String DEFAULT_CHARSET = "UTF-8";
 
-    protected AbstractJacksonConvertable(HttpResponse httpResponse, String charset) {
+    protected AbstractJacksonConvertible(HttpResponse httpResponse, String charset) {
         super(httpResponse);
         String finalCharset = charset == null ? DEFAULT_CHARSET : charset;
         try {

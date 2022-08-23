@@ -1,2 +1,0 @@
-2022-07-20 15:03:06.895  WARN ???? --- [main] o.m.a.h.DefaultPreparingRequest          %.%.%.%.DefaultPreparingRequestlr : Using type 'class java.io.InputStream' as return type, you should close the HttpEntity/InputStream yourself
-[]wEx

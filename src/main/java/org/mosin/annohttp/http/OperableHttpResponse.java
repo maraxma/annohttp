@@ -230,22 +230,22 @@ public class OperableHttpResponse implements HttpResponse, Sequencable {
     }
 
     @Override
-    public Convertable asXmlConvertable() {
-        return new XmlConvertable(httpResponse, DEFAULT_CHARSET);
+    public Convertible asXmlConvertible() {
+        return new XmlConvertible(httpResponse, DEFAULT_CHARSET);
     }
 
     @Override
-    public Convertable asJsonConvertable() {
-        return new JsonConvertable(httpResponse, DEFAULT_CHARSET);
+    public Convertible asJsonConvertible() {
+        return new JsonConvertible(httpResponse, DEFAULT_CHARSET);
     }
 
     @Override
-    public Convertable asYamlConvertable() {
-        return new YamlConvertable(httpResponse, DEFAULT_CHARSET);
+    public Convertible asYamlConvertible() {
+        return new YamlConvertible(httpResponse, DEFAULT_CHARSET);
     }
 
     @Override
-    public Convertable asConvertable(BiFunction<HttpResponse, String, Convertable> convertableProducer) {
+    public Convertible asConvertible(BiFunction<HttpResponse, String, Convertible> convertableProducer) {
         if (convertableProducer == null) {
             return null;
         }

@@ -23,12 +23,12 @@ public interface Sequencable extends Closeable {
 
     Object asJavaSerializedSequenceToObject();
 
-    Convertable asXmlConvertable();
+    Convertible asXmlConvertible();
 
-    Convertable asJsonConvertable();
+    Convertible asJsonConvertible();
 
-    Convertable asYamlConvertable();
+    Convertible asYamlConvertible();
 
-    Convertable asConvertable(BiFunction<HttpResponse, String, Convertable> convertableProducer);
+    Convertible asConvertible(BiFunction<HttpResponse, String, Convertible> convertableProducer);
 
 }

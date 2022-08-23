@@ -2,9 +2,9 @@ package org.mosin.annohttp.http;
 
 import org.apache.http.HttpResponse;
 
-public class XmlConvertable extends AbstractJacksonConvertable {
+public class XmlConvertible extends AbstractJacksonConvertible {
 
-    public XmlConvertable(HttpResponse httpResponse, String charset) {
+    public XmlConvertible(HttpResponse httpResponse, String charset) {
         super(httpResponse, charset);
         objectMapper = JacksonComponentHolder.getXmlMapper(false, true, true, false);
     }
