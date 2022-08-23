@@ -245,11 +245,11 @@ public class OperableHttpResponse implements HttpResponse, Sequencable {
     }
 
     @Override
-    public Convertible asConvertible(BiFunction<HttpResponse, String, Convertible> convertableProducer) {
-        if (convertableProducer == null) {
+    public Convertible asConvertible(BiFunction<HttpResponse, String, Convertible> convertibleProducer) {
+        if (convertibleProducer == null) {
             return null;
         }
-        return convertableProducer.apply(httpResponse, DEFAULT_CHARSET);
+        return convertibleProducer.apply(httpResponse, DEFAULT_CHARSET);
     }
 
 }

@@ -29,6 +29,6 @@ public interface Sequencable extends Closeable {
 
     Convertible asYamlConvertible();
 
-    Convertible asConvertible(BiFunction<HttpResponse, String, Convertible> convertableProducer);
+    Convertible asConvertible(BiFunction<HttpResponse, String, Convertible> convertibleProducer);
 
 }
