@@ -3,6 +3,9 @@ package org.mosin.annohttp.http;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * 代表一个消息体转换器。消息体转换器主要用于转换请求消息体和响应消息体。
+ */
 public interface Converter {
     Charset DEFAULT_STRING_CHARSET = StandardCharsets.UTF_8;
     String DEFAULT_STRING_FORM_FIELD_NAME = "String";

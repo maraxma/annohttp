@@ -1,6 +1,7 @@
 package org.mosin.annohttp.http;
 
 import java.lang.reflect.Proxy;
+import java.util.function.Function;
 
 import org.mosin.annohttp.annotation.Request;
 import org.mosin.annohttp.http.protocol.ProtocolHandler;
@@ -8,9 +9,9 @@ import org.mosin.annohttp.http.protocol.ProtocolHandlerMapping;
 import org.mosin.annohttp.http.request.converter.AutoRequestBodyConverter;
 import org.mosin.annohttp.http.request.converter.RequestBodyConverter;
 import org.mosin.annohttp.http.request.converter.RequestBodyConverterCache;
-import org.mosin.annohttp.http.response.converter.AutoResponseBodyConverter;
+import org.mosin.annohttp.http.response.converter.AutoResponseConverter;
 import org.mosin.annohttp.http.response.converter.ResponseBodyConverter;
-import org.mosin.annohttp.http.response.converter.ResponseBodyConverterCache;
+import org.mosin.annohttp.http.response.converter.ResponseConverterCache;
 
 /**
  * AnnoHttp的主要入口API，负责帮助用户创建请求实例。
@@ -41,6 +42,38 @@ public final class AnnoHttpClient {
     }
 
     /**
+     * 为请求接口创建具体的实例。创建好后，你将可以直接调用。
+     *
+     * @param <T>           实例接口类型
+     * @param annoHttpClass 请求接口类
+     * @param baseUrl       基础URL，可以是null，null代表不附加baseUrl
+     * @return 接口实例
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T create(Class<T> annoHttpClass, String baseUrl) {
+        // 动态代理
+        // 都是基于接口的，因此使用JDK自带的动态代理即可
+        // TODO 实现baseUrl
+        return (T) Proxy.newProxyInstance(annoHttpClass.getClassLoader(), new Class<?>[]{annoHttpClass}, InvocationHandlerHolder.INSTANCE);
+    }
+
+    /**
+     * 为请求接口创建具体的实例。创建好后，你将可以直接调用。
+     *
+     * @param <T>           实例接口类型
+     * @param annoHttpClass 请求接口类
+     * @param baseUrlProvider 基础URL提供器，可以是null，null代表不附加baseUrl
+     * @return 接口实例
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T create(Class<T> annoHttpClass, Function<AnnoHttpClientMetadata, String> baseUrlProvider) {
+        // 动态代理
+        // 都是基于接口的，因此使用JDK自带的动态代理即可
+        // TODO 实现baseUrlProvider
+        return (T) Proxy.newProxyInstance(annoHttpClass.getClassLoader(), new Class<?>[]{annoHttpClass}, InvocationHandlerHolder.INSTANCE);
+    }
+
+    /**
      * 注册请求体转换器。你可以定义自己的转换器，然后使用默认的 {@link AutoRequestBodyConverter} 来查找并应用。
      * <p>你也可以直接将自己的转换器写到 {@link Request#requestBodyConverter()} 上。
      *
@@ -51,13 +84,13 @@ public final class AnnoHttpClient {
     }
 
     /**
-     * 注册响应体转换器。你可以定义自己的转换器，然后使用默认的 {@link AutoResponseBodyConverter} 来查找并应用。
-     * <p>你也可以直接将自己的转换器写到 {@link Request#responseBodyConverter()} 上。
+     * 注册响应体转换器。你可以定义自己的转换器，然后使用默认的 {@link AutoResponseConverter} 来查找并应用。
+     * <p>你也可以直接将自己的转换器写到 {@link Request#responseConverter()} 上。
      *
      * @param responseBodyConverters 请求体转换器
      */
     public static void registerResponseBodyConverter(ResponseBodyConverter... responseBodyConverters) {
-        ResponseBodyConverterCache.addUserConverters(responseBodyConverters);
+        ResponseConverterCache.addUserConverters(responseBodyConverters);
     }
 
     /**

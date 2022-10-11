@@ -7,18 +7,20 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class ResponseBodyConverterCache {
+public class ResponseConverterCache {
 
-    static final Map<Class<? extends ResponseBodyConverter>, ResponseBodyConverter> REG_MAP = new LinkedHashMap<>();
+    static final Map<Class<? extends ResponseConverter>, ResponseBodyConverter> REG_MAP = new LinkedHashMap<>();
 
     static final ReadWriteLock LOCK = new ReentrantReadWriteLock();
 
-    static final Map<Class<? extends ResponseBodyConverter>, ResponseBodyConverter> DEFAULT_REG_MAP;
+    static final Map<Class<? extends ResponseConverter>, ResponseConverter> DEFAULT_REG_MAP;
 
-    public static final ResponseBodyConverter AUTO_RESPONSE_BODY_CONVERTER = new AutoResponseBodyConverter();
+    public static final ResponseBodyConverter AUTO_RESPONSE_BODY_CONVERTER = new AutoResponseConverter();
 
     static {
-        LinkedHashMap<Class<? extends ResponseBodyConverter>, ResponseBodyConverter> map = new LinkedHashMap<>();
+        LinkedHashMap<Class<? extends ResponseConverter>, ResponseConverter> map = new LinkedHashMap<>();
+        map.put(StatusLineResponseConverter.class, new StatusLineResponseConverter());
+        map.put(ResponseHeaderResponseConverter.class, new ResponseHeaderResponseConverter());
         map.put(InputStreamResponseBodyConverter.class, new InputStreamResponseBodyConverter());
         map.put(StringResponseBodyConverter.class, new StringResponseBodyConverter());
         map.put(ByteArrayResponseBodyConverter.class, new ByteArrayResponseBodyConverter());
@@ -42,11 +44,11 @@ public class ResponseBodyConverterCache {
         }
     }
 
-    public static Map<Class<? extends ResponseBodyConverter>, ResponseBodyConverter> getAll() {
+    public static Map<Class<? extends ResponseConverter>, ResponseConverter> getAll() {
         Lock lock = LOCK.readLock();
         try {
             lock.lock();
-            LinkedHashMap<Class<? extends ResponseBodyConverter>, ResponseBodyConverter> map = new LinkedHashMap<>();
+            LinkedHashMap<Class<? extends ResponseConverter>, ResponseConverter> map = new LinkedHashMap<>();
             map.putAll(REG_MAP);
             map.putAll(DEFAULT_REG_MAP);
             return Collections.unmodifiableMap(map);

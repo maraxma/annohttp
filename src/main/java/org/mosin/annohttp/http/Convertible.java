@@ -8,7 +8,7 @@ import java.util.Map;
 import org.mosin.annohttp.http.serialization.TypeRef;
 
 /**
- * 代表一个可转换的对象。
+ * 代表一个可转换的对象。特别地，annohttp将响应体作为一个可转换对象。
  */
 public interface Convertible extends Closeable {
 

@@ -1,66 +1,231 @@
 package org.mosin.annohttp;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Map;
-
-import org.junit.jupiter.api.Test;
+import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpServer;
+import io.vertx.ext.web.Router;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.Header;
+import org.apache.http.HttpResponse;
+import org.junit.jupiter.api.*;
 import org.mosin.annohttp.annotation.Body;
-import org.mosin.annohttp.annotation.ContentTypeApplicationJson;
-import org.mosin.annohttp.annotation.Header;
+import org.mosin.annohttp.annotation.ContentTypeTextPlain;
 import org.mosin.annohttp.annotation.Request;
 import org.mosin.annohttp.http.AnnoHttpClient;
-import org.mosin.annohttp.http.HttpMethod;
 import org.mosin.annohttp.http.PreparingRequest;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 public class TestRun {
 
-    @Test
-    void run() throws IOException {
-        R r = AnnoHttpClient.create(R.class);
-//        System.out.println(r.test4("application/json", Map.of("id", 21, "name", "mara", "age", 31, "score", 59)));
-        System.out.println(r.test5(Map.of("id", 21, "name", "mara", "age", 31, "score", 59)));
-    }
+    static HttpServer httpServer;
 
-    interface R {
+    @BeforeAll
+    static void beforeAll() {
 
-        /**
-         * 如果以 {@link PreparingRequest} 来接受返回，那么可以在后面再实施真正请求。
-         *
-         * @return
+        /*
+         * 新建一个HTTP服务，请求什么就响应什么，方便测试
          */
-        @Request(method = HttpMethod.POST,
-                url = "http://localhost:8080/test",
-                bodyString = "{\"id\": 2, \"name\": \"mara\", \"age\": 31, \"score\": 59}"
-        )
-        @ContentTypeApplicationJson
-        PreparingRequest<Map<String, Object>> test1();
 
-        @Request(method = HttpMethod.POST,
-                url = "http://localhost:8080/test",
-                bodyString = "{\"id\": 2, \"name\": \"mara\", \"age\": 31, \"score\": 59}"
-        )
-        @ContentTypeApplicationJson
-        Map<String, Object> test2();
-
-        @Request(method = HttpMethod.POST,
-                url = "http://localhost:8080/test",
-                bodyString = "{\"id\": 2, \"name\": \"mara\", \"age\": 31, \"score\": 59}"
-        )
-        @ContentTypeApplicationJson
-        InputStream test3();
-        
-        @Request(method = HttpMethod.POST,
-                url = "http://localhost:8080/test"
-        )
-        Map<String, Object> test4(@Header("Content-Type") String contentType, @Body Map<String, Object> body);
-        
-        @Request(method = HttpMethod.POST,
-                url = "http://localhost:8080/test",
-                proxy = "T(org.mosin.annohttp.http.proxy.RequestProxy).create('localhost', 8090, T(org.mosin.annohttp.http.proxy.RequestProxy.ProxyType).HTTP, false, T(org.mosin.annohttp" +
-                        ".http.proxy" +
-                        ".RequestProxy.ProxyCredentialType).NONE, null, null, null, null)"
-        )
-        Map<String, Object> test5(@Body Map<String, Object> body);
+        final var vertx = Vertx.vertx();
+        final var router = Router.router(vertx);
+        router.route("/test").handler(rctx -> {
+            var request = rctx.request();
+            var requestHeaders = request.headers();
+            var requestMethod = request.method();
+            var requestParam = request.params();
+            var response = rctx.response();
+            requestHeaders.forEach(entry -> {
+                response.headers().add(entry.getKey(), entry.getValue());
+            });
+            response.putHeader("Request-Method", requestMethod.name());
+            requestParam.forEach(entry -> response.putHeader("Request-Param-" + entry.getKey(), entry.getValue()));
+            request.body(r -> response.end(r.result()));
+        });
+        httpServer = vertx.createHttpServer()
+                .requestHandler(router)
+                .listen(8081).onSuccess(r -> System.out.println("已开启HTTP服务：" + r.actualPort())).result();
     }
+
+    @AfterAll
+    static void afterAll() {
+        if (httpServer != null) {
+            httpServer.close(result -> System.out.println("已关闭HTTP服务器"));
+        }
+    }
+
+    @Test
+    @DisplayName("普通测试 -- 默认GET方式，默认JSON请求类型，默认UTF-8，返回JSON字符串")
+    void baseTest() {
+        interface Client {
+            @Request(url = "http://localhost:8081/test")
+            String baseRequest(@Body String jsonBody);
+        }
+
+        Client c = AnnoHttpClient.create(Client.class);
+
+        String req =  """
+                {
+                    "Name": "Mara"
+                }
+                """;
+
+        String resp = c.baseRequest(req);
+
+        // 请求体 = 响应体
+        Assertions.assertEquals(req, resp);
+    }
+
+    @Test
+    @DisplayName("普通测试 -- 默认GET方式，自定义ContentType")
+    void baseTest2() {
+        interface Client {
+            @Request(url = "http://localhost:8081/test")
+            @ContentTypeTextPlain
+            HttpResponse baseRequest(@Body String jsonBody);
+        }
+
+        Client c = AnnoHttpClient.create(Client.class);
+
+        String req =  """
+                {
+                    "Name": "Mara"
+                }
+                """;
+
+        HttpResponse resp = c.baseRequest(req);
+
+        // 请求体 = 响应体
+        try {
+            Assertions.assertEquals(req, IOUtils.toString(resp.getEntity().getContent(), StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        // 请求头Content-Type = PainText
+        org.apache.http.Header[] headers = resp.getHeaders("Content-Type");
+        Assertions.assertEquals(1, headers.length);
+        Assertions.assertEquals("text/plain; charset=ISO-8859-1", headers[0].getValue());
+    }
+
+    @Test
+    @DisplayName("普通测试 -- 默认GET方式，直接以JSON转换到Bean")
+    void baseTest3() {
+
+        record Bean(String name) {
+
+        }
+
+        interface Client {
+            @Request(url = "http://localhost:8081/test")
+            Bean baseRequest(@Body String jsonBody);
+        }
+
+        Client c = AnnoHttpClient.create(Client.class);
+
+        String req =  """
+                {
+                    "name": "Mara"
+                }
+                """;
+
+        Bean resp = c.baseRequest(req);
+
+        Assertions.assertEquals("Mara", resp.name);
+    }
+
+    @Test
+    @DisplayName("普通测试 -- 默认GET方式，间接以JSON转换到Bean")
+    void baseTest4() {
+
+        record Bean(String name) {
+
+        }
+
+        interface Client {
+            @Request(url = "http://localhost:8081/test")
+            PreparingRequest<Bean> baseRequest(@Body String jsonBody);
+        }
+
+        Client c = AnnoHttpClient.create(Client.class);
+
+        String s =  """
+                {
+                    "name": "Mara"
+                }
+                """;
+
+        PreparingRequest<Bean> req = c.baseRequest(s);
+        try (var operableHttpResponse = req.requestOperable()) {
+            Assertions.assertEquals("Mara", operableHttpResponse.asJsonConvertible().toBean(Bean.class).name);
+        }
+    }
+
+    @Test
+    @DisplayName("普通测试 -- 默认GET方式，直接转换为Map")
+    void baseTest5() {
+
+        interface Client {
+            @Request(url = "http://localhost:8081/test")
+            Map<String, Object> baseRequest(@Body String jsonBody);
+        }
+
+        Client c = AnnoHttpClient.create(Client.class);
+
+        String s =  """
+                {
+                    "name": "Mara"
+                }
+                """;
+
+        Map<String, Object> map = c.baseRequest(s);
+
+        Assertions.assertEquals("Mara", map.get("name"));
+    }
+
+    @Test
+    @DisplayName("普通测试 -- 默认GET方式，自定义请求头，获得所有响应头")
+    void baseTest6() {
+
+        interface Client {
+            @Request(url = "http://localhost:8081/test", headers = {"Mara: 1", "Mara: 2"})
+            Header[] baseRequest(@Body String jsonBody);
+        }
+
+        Client c = AnnoHttpClient.create(Client.class);
+
+        String s =  """
+                {
+                    "name": "Mara"
+                }
+                """;
+
+        Header[] headers = c.baseRequest(s);
+
+        List<Header> headerList = Arrays.stream(headers).filter(e -> e.getName().equals("Mara")).toList();
+
+        Assertions.assertEquals(2, headerList.size());
+    }
+
+    @Test
+    @DisplayName("普通测试 -- 默认GET方式，不附加Body，期望不附加ContentType")
+    void baseTest7() {
+
+        interface Client {
+            @Request(url = "http://localhost:8081/test", headers = {"Mara: 1", "Mara: 2"})
+            Header[] baseRequest();
+        }
+
+        Client c = AnnoHttpClient.create(Client.class);
+
+        Header[] headers = c.baseRequest();
+
+        List<Header> headerList = Arrays.stream(headers).filter(e -> e.getName().equals("Content-Type")).toList();
+
+        Assertions.assertEquals(0, headerList.size());
+    }
+
 }

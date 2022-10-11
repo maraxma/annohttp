@@ -4,16 +4,32 @@ import org.mosin.annohttp.http.HttpMethod;
 import org.mosin.annohttp.http.proxy.RequestProxy;
 import org.mosin.annohttp.http.request.converter.AutoRequestBodyConverter;
 import org.mosin.annohttp.http.request.converter.RequestBodyConverter;
-import org.mosin.annohttp.http.response.converter.AutoResponseBodyConverter;
+import org.mosin.annohttp.http.response.converter.AutoResponseConverter;
 import org.mosin.annohttp.http.response.converter.ResponseBodyConverter;
+import org.mosin.annohttp.http.response.converter.ResponseConverter;
 import org.mosin.annohttp.http.visitor.BaseResponseVisitor;
 import org.mosin.annohttp.http.visitor.ResponseVisitor;
 
 import java.lang.annotation.*;
+import java.util.concurrent.Executor;
 
 /**
  * 标识一个方法作为HTTP的请求方法。
  * <p>此注解只能应用在接口的抽象方法上。</p>
+ * <p>一个接口如果需要用作HTTP客户端，那么其下的所有的抽象方法都应当附加注解@Request，然后使用 {@link org.mosin.annohttp.http.AnnoHttpClient#create(Class)} 方法将此接口实例化。</p>
+ * <p>被@Request标注的抽象方法在被调用时会实际发起HTTP请求，然后直接返回期望的结果。这涉及到该方法的返回值的设定。目前annohttp支持几乎所有的类型作为返回值，annohttp会尝试为用户转换。不过如下几种特殊的返回值有其特殊意义需要单独说明。</p>
+ * <p>
+ *     <table>
+ *         <tr><td>返回类型<td/><td>说明<td/></tr>
+ *         <tr><td>org.apache.http.Header[]<td/><td>直接返回该次请求的所有响应头。用户可以通过它处理响应头。当然，响应头之外的内容直接被丢弃。<td/></tr>
+ *         <tr><td>org.apache.http.StatusLine<td/><td>直接返回该次请求的状态行对象。用户可以通过它获得响应状态。当然，状态行之外的内容直接被丢弃。<td/></tr>
+ *         <tr><td>HttpResponse<td/><td>直接返回apache httpclient原生的 {@link org.apache.http.HttpResponse} 对象。通过该对象几乎可以达到最大的灵活处理。<td/></tr>
+ *         <tr><td>InputStream<td/><td>直接返回响应体 {@link java.io.InputStream} 输入流。用户可以通过它处理响应体。<td/></tr>
+ *         <tr><td>PreparingRequest&lt;T&gt;<td/><td>返回annohttp提供的 {@link org.mosin.annohttp.http.PreparingRequest} 实例。用户可以通过它发起异步请求以及获得可操作的响应体（{@link org.mosin.annohttp.http.OperableHttpResponse}）。
+ *         特别地，如果以此类型作为返回类型，在实际调用此方法的时候并不会直接发起请求，而是返回一个准备中的预请求对象PreparingRequest，只有当PreparingRequest中的request相关的方法被调用时才会真正发起请求。
+ *         另外。如果期望以异步的方式发起请求，要么自己在子线程中处理，要么使用 {@link org.mosin.annohttp.http.PreparingRequest#requestAsync(Executor)} 。<td/></tr>
+ *     </table>
+ * </p>
  * <p>此注解中的很多参数都支持SpEl。引入SpEl的目的是使“常量字符串”变得“可计算”，增加灵活性。</p>
  *
  * <p>SpEl 内部提供的可使用变量如下：</p>
@@ -22,6 +38,9 @@ import java.lang.annotation.*;
  *     <li>#headers：已经计算好的请求头，是一个 List 对象，里面包含name和value</li>
  *     <li>#queries：已经计算好的查询参数，是一个List 对象，里面包含name和value</li>
  * </ul>
+ *
+ * @author Mara.X.Ma
+ * @since 1.0.0
  */
 @Documented
 @Inherited
@@ -217,11 +236,11 @@ public @interface Request {
 
     /**
      * 指定响应转换器。
-     * <p>默认是内置的 {@link AutoResponseBodyConverter}。</p>
+     * <p>默认是内置的 {@link AutoResponseConverter}。</p>
      *
-     * @see ResponseBodyConverter
+     * @see ResponseConverter
      */
-    Class<? extends ResponseBodyConverter> responseBodyConverter() default AutoResponseBodyConverter.class;
+    Class<? extends ResponseConverter> responseConverter() default AutoResponseConverter.class;
 
     /**
      * 设定响应前置访问器。该前置访问器先于任何 {@link ResponseBodyConverter}，同样也优先于 {@link #successCondition()} 的执行。

@@ -27,11 +27,16 @@ import java.util.function.Supplier;
  * <p>{@link PreparingRequest} 对象提供了一些在请求前做最后准备的方法，供用户再次请求头、请求参数等，同时提供同步请求、异步请求、可操作对象请求等方法。
  * <p>如果你的请求方法期望的是通过异步的手段请求，亦或是在请求前需要设定动态计算的参数，又或者是你想要得到方便转换的的响应对象，那么你可以将此作为请求方法的返回类型。
  * <p>{@link PreparingRequest} 的泛型参数T需要指定你期望的返回结果，它可以是 {@link String}、{@link Map}、{@link HttpResponse}、{@link InputStream}、Java Bean
- * 甚至是任何类型，annohttp将使用内置的转换器（{@link ResponseBodyConverter}）尝试将其转换。当然，你也可以自定义你的转换器。
+ * 甚至是任何类型，annohttp将使用内置的转换器（{@link ResponseBodyConverter}）尝试将其转换。当然，你也可以自定义你的转换器。如果需要定义你的转换器，
+ * 实现 {@link ResponseBodyConverter} 并将其使用 {@link AnnoHttpClient#registerResponseBodyConverter(ResponseBodyConverter...)} 注册。注册后当符合条件时将优先使用
+ * 用户自定义的转换器。
  * 
  * @param <T> 期望返回的数据类型。
  * @author Mara.X.Ma
  * @since 1.0.0 2022-07-08
+ * @see AnnoHttpClient
+ * @see org.mosin.annohttp.http.request.converter.RequestBodyConverter
+ * @see ResponseBodyConverter
  */
 public sealed interface PreparingRequest<T> permits DefaultPreparingRequest {
 

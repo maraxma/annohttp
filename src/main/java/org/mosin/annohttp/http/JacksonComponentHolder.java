@@ -26,7 +26,7 @@ public class JacksonComponentHolder {
      * @param ignoreUnknownField  允许未知的字段出现（反序列化）
      * @param ignoreNullProperty  忽略值为NULL的字段（序列化）
      * @param capitalizeFieldName 字段首字母大写 （序列化）
-     * @return @{@link JsonMapper} 实例
+     * @return {@link JsonMapper} 实例
      */
     public static JsonMapper getJsonMapper(boolean ignoreCase, boolean ignoreUnknownField, boolean ignoreNullProperty, boolean capitalizeFieldName) {
         String key = ignoreCase + "|" + ignoreUnknownField + "|" + ignoreNullProperty + "|" + capitalizeFieldName;
@@ -49,7 +49,7 @@ public class JacksonComponentHolder {
      * @param ignoreUnknownField  允许未知的字段出现（反序列化）
      * @param ignoreNullProperty  忽略值为NULL的字段（序列化）
      * @param capitalizeFieldName 字段首字母大写 （序列化）
-     * @return @{@link XmlMapper} 实例
+     * @return {@link XmlMapper} 实例
      */
     public static XmlMapper getXmlMapper(boolean ignoreCase, boolean ignoreUnknownField, boolean ignoreNullProperty, boolean capitalizeFieldName) {
         String key = ignoreCase + "|" + ignoreUnknownField + "|" + ignoreNullProperty + "|" + capitalizeFieldName;
@@ -72,7 +72,7 @@ public class JacksonComponentHolder {
      * @param ignoreUnknownField  允许未知的字段出现（反序列化）
      * @param ignoreNullProperty  忽略值为NULL的字段（序列化）
      * @param capitalizeFieldName 字段首字母大写 （序列化）
-     * @return @{@link YAMLMapper} 实例
+     * @return {@link YAMLMapper} 实例
      */
     public static YAMLMapper getYamlMapper(boolean ignoreCase, boolean ignoreUnknownField, boolean ignoreNullProperty, boolean capitalizeFieldName) {
         String key = ignoreCase + "|" + ignoreUnknownField + "|" + ignoreNullProperty + "|" + capitalizeFieldName;

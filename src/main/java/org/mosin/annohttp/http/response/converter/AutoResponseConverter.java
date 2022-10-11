@@ -1,23 +1,23 @@
 package org.mosin.annohttp.http.response.converter;
 
-import java.nio.charset.Charset;
-
 import org.apache.http.HttpResponse;
 import org.apache.http.entity.ContentType;
 import org.mosin.annohttp.http.AnnoHttpClientMetadata;
 import org.mosin.annohttp.http.exception.NoApplicableResponseBodyConverterException;
 
+import java.nio.charset.Charset;
+
 /**
  * 自动识别的响应转换器。
  */
-public class AutoResponseBodyConverter implements ResponseBodyConverter {
+public class AutoResponseConverter implements ResponseBodyConverter {
 
     @Override
     public Object convert(HttpResponse httpResponse, AnnoHttpClientMetadata metadata, ContentType computedResponseContentType, Charset computedResponseCharset) {
 
-        for (ResponseBodyConverter responseBodyConverter : ResponseBodyConverterCache.getAll().values()) {
-            if (responseBodyConverter.canConvert(httpResponse, metadata, computedResponseContentType, computedResponseCharset)) {
-                return responseBodyConverter.convert(httpResponse, metadata, computedResponseContentType, computedResponseCharset);
+        for (ResponseConverter responseConverter : ResponseConverterCache.getAll().values()) {
+            if (responseConverter.canConvert(httpResponse, metadata, computedResponseContentType, computedResponseCharset)) {
+                return responseConverter.convert(httpResponse, metadata, computedResponseContentType, computedResponseCharset);
             }
         }
 

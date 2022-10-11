@@ -33,6 +33,15 @@ public abstract class AbstractJacksonConvertible extends AbstractConvertible {
         }
     }
 
+    /**
+     * 直接返回该对象的JSON字符串形式。
+     * @return JSON字符串
+     */
+    @Override
+    public String toString() {
+        return objectString;
+    }
+
     @Override
     public <T> T toBean(Class<T> clazz) {
         Objects.requireNonNull(clazz);

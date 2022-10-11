@@ -26,9 +26,9 @@ import org.mosin.annohttp.http.proxy.HttpClientProxyContext;
 import org.mosin.annohttp.http.proxy.RequestProxy;
 import org.mosin.annohttp.http.request.converter.MapRequestBodyConverter;
 import org.mosin.annohttp.http.request.converter.RequestBodyConverterCache;
-import org.mosin.annohttp.http.response.converter.AutoResponseBodyConverter;
-import org.mosin.annohttp.http.response.converter.ResponseBodyConverter;
-import org.mosin.annohttp.http.response.converter.ResponseBodyConverterCache;
+import org.mosin.annohttp.http.response.converter.AutoResponseConverter;
+import org.mosin.annohttp.http.response.converter.ResponseConverter;
+import org.mosin.annohttp.http.response.converter.ResponseConverterCache;
 import org.mosin.annohttp.http.spel.SpelUtils;
 import org.mosin.annohttp.http.visitor.ResponseVisitor;
 import org.mosin.annohttp.http.visitor.ResponseVisitorCache;
@@ -188,11 +188,11 @@ non-sealed class DefaultPreparingRequest<T> implements PreparingRequest<T> {
                 computedResponseCharset = Charset.forName(userResponseCharset);
             }
 
-            Class<? extends ResponseBodyConverter> converterClass = metadata.getRequestAnnotation().responseBodyConverter();
-            if (converterClass == AutoResponseBodyConverter.class) {
-                return (T) ResponseBodyConverterCache.AUTO_RESPONSE_BODY_CONVERTER.convert(httpResponse, metadata, computedResponseContentType, computedResponseCharset);
+            Class<? extends ResponseConverter> converterClass = metadata.getRequestAnnotation().responseConverter();
+            if (converterClass == AutoResponseConverter.class) {
+                return (T) ResponseConverterCache.AUTO_RESPONSE_BODY_CONVERTER.convert(httpResponse, metadata, computedResponseContentType, computedResponseCharset);
             } else {
-                ResponseBodyConverter responseConverter = ResponseBodyConverterCache.getAll().get(converterClass);
+                ResponseConverter responseConverter = ResponseConverterCache.getAll().get(converterClass);
                 if (responseConverter == null) {
                     throw new NoApplicableResponseBodyConverterException("Cannot find response convert '" + converterClass + "', please register it before using");
                 }
@@ -348,6 +348,9 @@ non-sealed class DefaultPreparingRequest<T> implements PreparingRequest<T> {
             computedUri = URI.create(computedUrl);
         }
 
+        if (url == null || "".equals(url.trim())) {
+            throw new IllegalArgumentException("Illegal url: " + url);
+        }
         String protocol = url.substring(0, url.indexOf("://")).trim().toLowerCase();
         ProtocolHandler protocolHandler = ProtocolHandlerMapping.getHandler(protocol);
         protocolHandler.handle(metadata, this);

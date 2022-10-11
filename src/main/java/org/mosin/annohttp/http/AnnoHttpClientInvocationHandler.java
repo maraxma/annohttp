@@ -395,7 +395,7 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
     }
 
     protected HttpEntity processBody(List<CoverableNameValuePair> existingHeaders, Request requestAnno, Parameter[] parameters, Object[] args, AnnoHttpClientMetadata metadata, EvaluationContext evaluationContext) {
-        HttpEntity httpEntity;
+        HttpEntity httpEntity = null;
         ContentType computedRequestContentType = null;
         for (CoverableNameValuePair header : existingHeaders) {
             if (header.getName().equalsIgnoreCase(HTTP.CONTENT_TYPE)) {
@@ -438,7 +438,7 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
                     throw new IllegalArgumentException("You can only use one of bodyString/bodyBytes/bodySpel to set body on @Request");
                 }
                 httpEntity = convertRequestBody(requestBodyConverterClass, annoBodyBytes, computedRequestContentType, metadata, DEFAULT_BYTES_FIELD_NAME);
-            } else {
+            } else if (!"".equals(annoBodySpel)) {
                 Object res = SpelUtils.executeSpel(annoBodySpel, evaluationContext, Object.class);
                 httpEntity = convertRequestBody(requestBodyConverterClass, res, computedRequestContentType, metadata, DEFAULT_OBJECT_FIELD_NAME);
             }
@@ -460,31 +460,30 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
     }
 
     protected void processContentTypeAnnotation(LinkedList<CoverableNameValuePair> existingHeaders, Method method, Request requestAnno) {
-        Annotation contentTypeAnno = null;
+        String contentTypeAnnoName = null;
         for (Annotation annotation : method.getAnnotations()) {
-            if (annotation.getClass().getSimpleName().startsWith("ContentType")) {
-                contentTypeAnno = annotation;
+            if ((contentTypeAnnoName = annotation.annotationType().getSimpleName()).startsWith("ContentType")) {
                 break;
             }
+            contentTypeAnnoName = null;
         }
         ContentType contentType;
-        if (contentTypeAnno != null) {
-            String contentTypeName = contentTypeAnno.getClass().getName();
-            if (contentTypeName.contains("ApplicationJson")) {
+        if (contentTypeAnnoName != null) {
+            if (contentTypeAnnoName.contains("ApplicationJson")) {
                 contentType = ContentType.APPLICATION_JSON;
-            } else if (contentTypeName.contains("ApplicationXml")) {
+            } else if (contentTypeAnnoName.contains("ApplicationXml")) {
                 contentType = ContentType.APPLICATION_XML;
-            } else if (contentTypeName.contains("ApplicationFormUrlEncoded")) {
+            } else if (contentTypeAnnoName.contains("ApplicationFormUrlEncoded")) {
                 contentType = ContentType.APPLICATION_FORM_URLENCODED;
-            } else if (contentTypeName.contains("PlainText")) {
+            } else if (contentTypeAnnoName.contains("TextPlain")) {
                 contentType = ContentType.TEXT_PLAIN;
-            } else if (contentTypeName.contains("ApplicationMultipartFormData")) {
+            } else if (contentTypeAnnoName.contains("ApplicationMultipartFormData")) {
                 contentType = ContentType.MULTIPART_FORM_DATA;
-            } else if (contentTypeName.contains("Wildcard")) {
+            } else if (contentTypeAnnoName.contains("Wildcard")) {
                 contentType = ContentType.WILDCARD;
             } else {
                 // should never happen
-                throw new IllegalArgumentException("Unsupported annotation ContentType: " + contentTypeName);
+                throw new IllegalArgumentException("Unsupported annotation ContentType: " + contentTypeAnnoName);
             }
 
             // 注意优先级，注解指定ContentType的优先级是最低的

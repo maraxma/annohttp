@@ -22,7 +22,7 @@ public class ByteArrayRequestBodyConverter implements RequestBodyConverter {
                 charset = charset == null ? DEFAULT_STRING_CHARSET : charset;
                 httpEntity = new StringEntity(new String((byte[]) source, charset), charset);
             } else {
-                throw new IllegalArgumentException("If @Body represent a byte[], its content type can application/octet-stream or text/plain only, or you can not set content type, annohhttp set it as application/octet-stream by default");
+                throw new IllegalArgumentException("If @Body represent a byte[], its content type can application/octet-stream or text/plain only, or you can set no content type, annohttp set it as application/octet-stream by default");
             }
         }
 

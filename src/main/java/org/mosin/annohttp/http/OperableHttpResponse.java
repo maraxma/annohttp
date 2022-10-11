@@ -17,20 +17,18 @@ import org.apache.http.params.HttpParams;
 import org.apache.http.util.EntityUtils;
 import org.mosin.annohttp.http.exception.ConversionException;
 
-@SuppressWarnings("deprecation")
-public class OperableHttpResponse implements HttpResponse, Sequencable {
+/**
+ * 可操作响应体。提供一系列方便的操作方法以便将此湘阴提提转换为用户期望的形式。
+ * @param httpResponse 响应体实例
+ * @author Mara.X.Ma
+ * @since 1.0.0
+ */
+public record OperableHttpResponse(HttpResponse httpResponse) implements HttpResponse, Sequencable {
 
-    protected final HttpResponse httpResponse;
-
-    public OperableHttpResponse(HttpResponse httpResponse) {
+    public OperableHttpResponse {
         if (httpResponse == null) {
             throw new IllegalArgumentException("httpResponse cannot be null");
         }
-        this.httpResponse = httpResponse;
-    }
-
-    public HttpResponse getHttpResponse() {
-        return httpResponse;
     }
 
     @Override
