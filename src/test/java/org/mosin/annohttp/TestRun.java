@@ -6,11 +6,13 @@ import io.vertx.ext.web.Router;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
+import org.apache.http.StatusLine;
 import org.junit.jupiter.api.*;
 import org.mosin.annohttp.annotation.Body;
 import org.mosin.annohttp.annotation.ContentTypeTextPlain;
 import org.mosin.annohttp.annotation.Request;
 import org.mosin.annohttp.http.AnnoHttpClient;
+import org.mosin.annohttp.http.HttpMethod;
 import org.mosin.annohttp.http.PreparingRequest;
 
 import java.io.IOException;
@@ -38,9 +40,7 @@ public class TestRun {
             var requestMethod = request.method();
             var requestParam = request.params();
             var response = rctx.response();
-            requestHeaders.forEach(entry -> {
-                response.headers().add(entry.getKey(), entry.getValue());
-            });
+            requestHeaders.forEach(entry -> response.headers().add(entry.getKey(), entry.getValue()));
             response.putHeader("Request-Method", requestMethod.name());
             requestParam.forEach(entry -> response.putHeader("Request-Param-" + entry.getKey(), entry.getValue()));
             request.body(r -> response.end(r.result()));
@@ -228,4 +228,68 @@ public class TestRun {
         Assertions.assertEquals(0, headerList.size());
     }
 
+    @Test
+    @DisplayName("普通测试 -- 默认GET方式，只获取StatusLine")
+    void baseTest8() {
+
+        interface Client {
+            @Request(url = "http://localhost:8081/test", successCondition = "true")
+            StatusLine baseRequest();
+        }
+
+        Client c = AnnoHttpClient.create(Client.class);
+
+        StatusLine statusLine = c.baseRequest();
+
+        Assertions.assertEquals(200, statusLine.getStatusCode());
+    }
+
+    @Test
+    @DisplayName("普通测试 -- 默认GET方式，通过PreparingRequest获取StatusLine")
+    void baseTest9() {
+
+        interface Client {
+            @Request(url = "http://localhost:8081/test", successCondition = "")
+            PreparingRequest<StatusLine> baseRequest();
+            // 不推荐将StatusLine、Header[]等特殊类型放入PreparingRequest，因为PreparingRequest是专门处理响应体的
+        }
+
+        Client c = AnnoHttpClient.create(Client.class);
+        PreparingRequest<StatusLine> preparingRequest = c.baseRequest();
+
+        HttpResponse httpResponse = preparingRequest.requestClassically();
+        Assertions.assertEquals(200, httpResponse.getStatusLine().getStatusCode());
+
+        StatusLine statusLine = preparingRequest.request();
+        Assertions.assertEquals(200, statusLine.getStatusCode());
+
+        // 断言抛出错误，因为无法将响应体转换为StatusLine
+        try (final var o = preparingRequest.requestOperable()) {
+            Assertions.assertThrows(Exception.class, () -> o.asJavaSerializedSequenceToObject(StatusLine.class));
+        }
+    }
+
+    @Test
+    @DisplayName("普通测试 -- 默认GET方式，附加baseUrl")
+    void baseTest10() {
+
+        interface Client {
+            @Request(url = "/test", successCondition = "true")
+            StatusLine baseRequest();
+        }
+
+        Client c = AnnoHttpClient.create(Client.class, "http://localhost:8081/");
+        StatusLine statusLine = c.baseRequest();
+        Assertions.assertEquals(200, statusLine.getStatusCode());
+
+        Client c2 = AnnoHttpClient.create(Client.class, (metadata -> {
+            if (metadata.getRequestAnnotation().method() == HttpMethod.GET) {
+                return "http://localhost:8081/";
+            } else {
+                return "http://localhost:9081/";
+            }
+        }));
+        StatusLine statusLine2 = c2.baseRequest();
+        Assertions.assertEquals(200, statusLine2.getStatusCode());
+    }
 }

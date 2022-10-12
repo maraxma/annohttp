@@ -1,52 +1,46 @@
 package org.mosin.annohttp.http;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
 import org.apache.http.entity.ContentType;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
-import org.mosin.annohttp.annotation.Body;
-import org.mosin.annohttp.annotation.FormField;
-import org.mosin.annohttp.annotation.FormFields;
-import org.mosin.annohttp.annotation.Headers;
-import org.mosin.annohttp.annotation.PathVar;
-import org.mosin.annohttp.annotation.PathVars;
 import org.mosin.annohttp.annotation.Proxy;
-import org.mosin.annohttp.annotation.Queries;
-import org.mosin.annohttp.annotation.Query;
-import org.mosin.annohttp.annotation.Request;
+import org.mosin.annohttp.annotation.*;
 import org.mosin.annohttp.http.proxy.RequestProxy;
 import org.mosin.annohttp.http.request.converter.AutoRequestBodyConverter;
 import org.mosin.annohttp.http.request.converter.RequestBodyConverterCache;
 import org.mosin.annohttp.http.spel.SpelUtils;
 import org.springframework.expression.EvaluationContext;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.lang.reflect.*;
+import java.util.*;
+import java.util.function.Function;
+
 public class AnnoHttpClientInvocationHandler implements InvocationHandler {
 
     protected static final String MAP_KEY_NAME = "name";
     protected static final String MAP_KEY_VALUE = "value";
     protected static final String MAP_KEY_COVERABLE = "coverable";
+    protected String baseUrl;
+    protected Function<AnnoHttpClientMetadata, String> baseUrlProvider;
 
     public static final String DEFAULT_BYTES_FIELD_NAME = "Bytes";
     public static final String DEFAULT_STRING_FIELD_NAME = "String";
     public static final String DEFAULT_OBJECT_FIELD_NAME = "Object";
 
+    AnnoHttpClientInvocationHandler(String baseUrl) {
+        this.baseUrl = baseUrl;
+    }
+
+    AnnoHttpClientInvocationHandler(Function<AnnoHttpClientMetadata, String> baseUrlProvider) {
+        this.baseUrlProvider = baseUrlProvider;
+    }
+
     @Override
-    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+    public Object invoke(Object proxy, Method method, Object[] args) {
     	
     	Request requestAnno = method.getAnnotation(Request.class);
     	
@@ -62,11 +56,20 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
         Parameter[] parameters = method.getParameters();
         EvaluationContext evaluationContext = SpelUtils.prepareSpelContext(args);
 
+        // 组装AnnotationHttpClientMetadata
+        DefaultAnnoHttpClientMetadata annoHttpClientMetadata = new DefaultAnnoHttpClientMetadata();
+        annoHttpClientMetadata.serviceClient = this;
+        annoHttpClientMetadata.requestMethodReturnClass = returnType;
+        annoHttpClientMetadata.serviceClientClass = this.getClass();
+        annoHttpClientMetadata.requestMethod = method;
+        annoHttpClientMetadata.requestArguments = args == null ? new Object[0] : Arrays.copyOf(args, args.length);
+        annoHttpClientMetadata.requestAnnotation = requestAnno;
+
         /*       1 处理HttpMethod  */
         HttpMethod computedMethod = processMethod(requestAnno, parameters, args);
 
         /*       2 处理URL         */
-        String computedUrl = processUrl(requestAnno, parameters, args, evaluationContext);
+        String computedUrl = processUrl(requestAnno, annoHttpClientMetadata, parameters, args, evaluationContext);
 
         /*       3 处理PathVars     */
         Map<String, String> pathVars = processPathVars(parameters, args);
@@ -77,7 +80,7 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
 
         /*       5 处理请参数       */
         // 注意优先级，参数列表中的查询参数 > @Request注解查询参数
-        List<CoverableNameValuePair> queries = processQueryParameters(computedUrl, parameters, args, requestAnno, evaluationContext);
+        List<CoverableNameValuePair> queries = processQueryParameters(parameters, args, requestAnno, evaluationContext);
 
         /*       6 处理代理设置     */
         RequestProxy requestProxy = processProxy(requestAnno, parameters, args, evaluationContext);
@@ -99,14 +102,6 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
         // 视条件发起请求
         // 如果返回值非PreparingRequest，那么直接请求并转换结果
         // 如果是，那么包装之，然后返回
-        // 组装AnnotationHttpClientMetadata
-        DefaultAnnoHttpClientMetadata annoHttpClientMetadata = new DefaultAnnoHttpClientMetadata();
-        annoHttpClientMetadata.serviceClient = this;
-        annoHttpClientMetadata.requestMethodReturnClass = returnType;
-        annoHttpClientMetadata.serviceClientClass = this.getClass();
-        annoHttpClientMetadata.requestMethod = method;
-        annoHttpClientMetadata.requestArguments = args == null ? new Object[0] : Arrays.copyOf(args, args.length);
-        annoHttpClientMetadata.requestAnnotation = requestAnno;
         preparingRequest = new DefaultPreparingRequest<>(
                 computedMethod,
                 computedUrl,
@@ -195,9 +190,7 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
         Iterator<CoverableNameValuePair> iter = existing.iterator();
         while (iter.hasNext()) {
             CoverableNameValuePair existingCoverable = iter.next();
-            NameValuePair existingNameValuePair = existingCoverable;
-            NameValuePair incomingNameValuePair = incoming;
-            if (existingNameValuePair.getName().equalsIgnoreCase(incomingNameValuePair.getName())) {
+            if (((NameValuePair) existingCoverable).getName().equalsIgnoreCase(((NameValuePair) incoming).getName())) {
                 if (existingCoverable.isCoverable()) {
                     iter.remove();
                 }
@@ -206,7 +199,7 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
         existing.addLast(incoming);
     }
 
-    protected String processUrl(Request requestAnno, Parameter[] parameters, Object[] args, EvaluationContext evaluationContext) {
+    protected String processUrl(Request requestAnno, AnnoHttpClientMetadata metadata, Parameter[] parameters, Object[] args, EvaluationContext evaluationContext) {
         String computedUrl = requestAnno.url();
         String urlSpel = requestAnno.urlSpel();
         if (!"".equals(computedUrl) && !"".equals(urlSpel)) {
@@ -230,7 +223,26 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
                 break;
             }
         }
+
+        String finalBaseUrl = baseUrl;
+        if (baseUrlProvider != null) {
+            finalBaseUrl = baseUrlProvider.apply(metadata);
+        }
+        if (finalBaseUrl != null && !"".equals(finalBaseUrl.trim())) {
+            return contactUrl(finalBaseUrl, computedUrl);
+        }
+
         return computedUrl;
+    }
+
+    private static String contactUrl(String baseUrl, String subUrl) {
+        if ((baseUrl.endsWith("/") && !subUrl.startsWith("/")) || (!baseUrl.endsWith("/") && subUrl.startsWith("/"))) {
+            return baseUrl + subUrl;
+        } else if (baseUrl.endsWith("/") && subUrl.startsWith("/")) {
+            return baseUrl.substring(0, baseUrl.length() - 1) + subUrl;
+        } else {
+            return baseUrl + "/" + subUrl;
+        }
     }
 
     protected HttpMethod processMethod(Request requestAnno, Parameter[] parameters, Object[] args) {
@@ -531,7 +543,7 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
         return formFields;
     }
 
-    protected LinkedList<CoverableNameValuePair> processQueryParameters(String url, Parameter[] parameters, Object[] args, Request requestAnno, EvaluationContext evaluationContext) {
+    protected LinkedList<CoverableNameValuePair> processQueryParameters(Parameter[] parameters, Object[] args, Request requestAnno, EvaluationContext evaluationContext) {
         LinkedList<CoverableNameValuePair> queries = new LinkedList<>();
         boolean queryCoverable = requestAnno.queryCoverable();
         // 5.1 处理方法参数列表中给出的请求参数

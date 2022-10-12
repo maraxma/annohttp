@@ -1,8 +1,5 @@
 package org.mosin.annohttp.http;
 
-import java.lang.reflect.Proxy;
-import java.util.function.Function;
-
 import org.mosin.annohttp.annotation.Request;
 import org.mosin.annohttp.http.protocol.ProtocolHandler;
 import org.mosin.annohttp.http.protocol.ProtocolHandlerMapping;
@@ -12,6 +9,12 @@ import org.mosin.annohttp.http.request.converter.RequestBodyConverterCache;
 import org.mosin.annohttp.http.response.converter.AutoResponseConverter;
 import org.mosin.annohttp.http.response.converter.ResponseBodyConverter;
 import org.mosin.annohttp.http.response.converter.ResponseConverterCache;
+
+import java.lang.reflect.Proxy;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 /**
  * AnnoHttp的主要入口API，负责帮助用户创建请求实例。
@@ -34,11 +37,10 @@ public final class AnnoHttpClient {
      * @param annoHttpClass 请求接口类
      * @return 接口实例
      */
-    @SuppressWarnings("unchecked")
     public static <T> T create(Class<T> annoHttpClass) {
         // 动态代理
         // 都是基于接口的，因此使用JDK自带的动态代理即可
-        return (T) Proxy.newProxyInstance(annoHttpClass.getClassLoader(), new Class<?>[]{annoHttpClass}, InvocationHandlerHolder.INSTANCE);
+        return create(annoHttpClass, "");
     }
 
     /**
@@ -54,7 +56,7 @@ public final class AnnoHttpClient {
         // 动态代理
         // 都是基于接口的，因此使用JDK自带的动态代理即可
         // TODO 实现baseUrl
-        return (T) Proxy.newProxyInstance(annoHttpClass.getClassLoader(), new Class<?>[]{annoHttpClass}, InvocationHandlerHolder.INSTANCE);
+        return (T) Proxy.newProxyInstance(annoHttpClass.getClassLoader(), new Class<?>[]{annoHttpClass}, InvocationHandlerHolder.getOrCreateAnnoHttpClientInvocationHandler(baseUrl));
     }
 
     /**
@@ -70,7 +72,7 @@ public final class AnnoHttpClient {
         // 动态代理
         // 都是基于接口的，因此使用JDK自带的动态代理即可
         // TODO 实现baseUrlProvider
-        return (T) Proxy.newProxyInstance(annoHttpClass.getClassLoader(), new Class<?>[]{annoHttpClass}, InvocationHandlerHolder.INSTANCE);
+        return (T) Proxy.newProxyInstance(annoHttpClass.getClassLoader(), new Class<?>[]{annoHttpClass}, new AnnoHttpClientInvocationHandler(baseUrlProvider));
     }
 
     /**
@@ -102,6 +104,17 @@ public final class AnnoHttpClient {
     }
 
     private static class InvocationHandlerHolder {
-        private static final AnnoHttpClientInvocationHandler INSTANCE = new AnnoHttpClientInvocationHandler();
+        private static final AnnoHttpClientInvocationHandler INSTANCE_NO_BASE_URL = new AnnoHttpClientInvocationHandler("");
+
+        private static final Map<String, AnnoHttpClientInvocationHandler> INSTANCES = new ConcurrentHashMap<>();
+
+        static AnnoHttpClientInvocationHandler getOrCreateAnnoHttpClientInvocationHandler(String baseUrl) {
+            if (null == baseUrl || "".equals(baseUrl.trim())) {
+                return INSTANCE_NO_BASE_URL;
+            } else {
+                return INSTANCES.compute(baseUrl.toLowerCase().trim(), (s, annoHttpClientInvocationHandler) -> Objects.requireNonNullElseGet(annoHttpClientInvocationHandler, () -> new AnnoHttpClientInvocationHandler(baseUrl)));
+            }
+        }
     }
+
 }

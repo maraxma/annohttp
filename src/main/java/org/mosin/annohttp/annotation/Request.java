@@ -198,7 +198,7 @@ public @interface Request {
     boolean disableRedirects() default false;
 
     /**
-     * 如何判断访问成功。必须是SpEl表达式且必须返回boolean。
+     * 如何判断访问成功。必须是SpEl表达式且必须返回boolean。如果是空字符串，则代表不附加任何条件。
      * <p>默认值为“#status==200”，代表当响应码为200时认为访问成功。这个时候才开始做响应体的自动转换。
      * <p>当不涉及到响应体的自动转换时此参数无效。
      * <p>SpEl表达式中你将可以获得如下的额外变量（基础变量仍然提供，参见本类上的文档）：

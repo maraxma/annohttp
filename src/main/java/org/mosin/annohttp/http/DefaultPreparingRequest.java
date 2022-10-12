@@ -489,15 +489,17 @@ non-sealed class DefaultPreparingRequest<T> implements PreparingRequest<T> {
 
         // 处理successCondition
         String successCondition = metadata.getRequestAnnotation().successCondition();
-        EvaluationContext evaluationContext = SpelUtils.prepareSpelContext(metadata.getRequestMethodArguments());
-        evaluationContext.setVariable("httpResponse", httpResponse);
-        Object res = SpelUtils.executeSpel(successCondition, evaluationContext, Object.class);
-        if (res instanceof Boolean b) {
-            if (!b) {
-                throw new UnexpectedResponseException("Unexpected response, the spel successCondition returns false: " + successCondition);
+        if (!"".equals(successCondition.trim())) {
+            EvaluationContext evaluationContext = SpelUtils.prepareSpelContext(metadata.getRequestMethodArguments());
+            evaluationContext.setVariable("httpResponse", httpResponse);
+            Object res = SpelUtils.executeSpel(successCondition, evaluationContext, Object.class);
+            if (res instanceof Boolean b) {
+                if (!b) {
+                    throw new UnexpectedResponseException("Unexpected response, the spel successCondition returns false: " + successCondition);
+                }
+            } else {
+                throw new IllegalArgumentException("@Request.successCondition() must return a boolean value");
             }
-        } else {
-            throw new IllegalArgumentException("@Request.successCondition() must return a boolean value");
         }
 
         return httpResponse;

@@ -83,6 +83,13 @@ OperableHttpResponse对象由PreparingRequest.requestOperable()方法生成，�
 - 视响应体为Java序列化后的序列
 - 视响应体为字节数组
 
+OperableHttpResponse是HttpResponse的子类，包含HttpResponse提供的所有方法，因此，既可以获得响应体也可以获得响应中的其他部分（如响应头、状态行等）。
+但是asXX()方法只针对响应体。
+
+推荐使用PreparingRequest.requestOperable()方法来获得OperableHttpResponse响应对象，这样你几乎可以做到任何事情。
+
+OperableHttpResponse对象实现了Closable接口，因此需要注意在使用完成后手动关闭OperableHttpResponse对象。推荐使用try-with-resources来书写。
+
 annohttp可以让用户通过方法的选择直接处理如上的情况，将其转换为具体的Java对象。
 
 ```
@@ -232,10 +239,12 @@ public class Main {
 
 annohttp提供了两类的转换器接口：
 
-- HttpRequestConverter
-- HttpResponseConverter
+- RequestBodyConverter：请求体转换器，专门负责转换请求体（如将Map转换为urlencoded形式的请求体）
+- ResponseConverter：响应转换器，专门负责将响应转换为用户需要的样子（如只提取响应头，只提取StatusLine，将响应体转换为Object等）
 
-且annohttp内置的各种转换器足以应付大部分开发需求。
+需要注意的是ResponseBodyConverter是ResponseConverter的子类，只负责响应体的转换。
+
+annohttp内置的各种转换器足以应付大部分开发需求。
 
 但是，我们可以自行实现上述的接口以扩展我们的处理范围或实现其他的需求。
 
@@ -245,9 +254,8 @@ annohttp提供了两类的转换器接口：
 
 ```java
 AnnoHttpClient.registerRequestBodyConverter(new MyRequestBodyConverter());
-AnnoHttpClient.registerResponseBodyConverter(new MyResponseBodyConverter());
+AnnoHttpClient.registerResponseBodyConverter(new MyResponseConverter());
 ```
-
 
 
 ## 注解一览表

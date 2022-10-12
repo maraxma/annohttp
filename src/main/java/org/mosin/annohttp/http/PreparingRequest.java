@@ -30,8 +30,10 @@ import java.util.function.Supplier;
  * 甚至是任何类型，annohttp将使用内置的转换器（{@link ResponseBodyConverter}）尝试将其转换。当然，你也可以自定义你的转换器。如果需要定义你的转换器，
  * 实现 {@link ResponseBodyConverter} 并将其使用 {@link AnnoHttpClient#registerResponseBodyConverter(ResponseBodyConverter...)} 注册。注册后当符合条件时将优先使用
  * 用户自定义的转换器。
- * 
- * @param <T> 期望返回的数据类型。
+ * <p>此类中的大部分方法（{@link #request()}、{@link #requestOperable()}）都是针对<b>响应体（Response Body）的，因此如果需要处理响应体之外的内容（如状态行、响应头）等请使用
+ * {@link #requestClassically()}得到 {@link HttpResponse} 对象然后自行获得。或者直接设定 Header[] 、{@link org.apache.http.StatusLine} 作为返回值。</b></p>
+ * <p>不推荐将StatusLine、Header[]等特殊类型放入PreparingRequest作为T，因为PreparingRequest是专门处理响应体的。</p>
+ * @param <T> 期望返回的<b>响应体</b>的数据类型。
  * @author Mara.X.Ma
  * @since 1.0.0 2022-07-08
  * @see AnnoHttpClient
@@ -121,7 +123,7 @@ public sealed interface PreparingRequest<T> permits DefaultPreparingRequest {
     PreparingRequest<T> customRequestConfig(Consumer<RequestConfig.Builder> requestConfigBuilderConsumer);
 
     /**
-     * 同步请求。
+     * 同步请求并接收ResponseBody。直接将响应体转换为用户定义在返回值中的形式。
      * <p>此方法可能会抛出三种类型的异常，但它们都是运行时异常，用户可以选择性处理。</p>
      *
      * @return 响应体
@@ -132,7 +134,7 @@ public sealed interface PreparingRequest<T> permits DefaultPreparingRequest {
     T request() throws RequestFailedException, UnexpectedResponseException, ConversionException;
 
     /**
-     * 异步请求。这是 {@link #request()} 方法的异步版本。
+     * 异步请求并接收ResponseBody。直接将响应体转换为用户定义在返回值中的形式。这是 {@link #request()} 方法的异步版本。
      *
      * @param executorService 线程池
      * @return 未来对象
@@ -141,7 +143,7 @@ public sealed interface PreparingRequest<T> permits DefaultPreparingRequest {
     CompletableFuture<T> requestAsync(Executor executorService);
 
     /**
-     * 带回调的异步请求。这是 {@link #request()} 方法的异步版本。
+     * 异步请求并接收ResponseBody（带回调）。直接将响应体转换为用户定义在返回值中的形式。这是 {@link #request()} 方法的异步版本。
      *
      * @param executorService 线程池
      * @param resultConsumer  结果消费器
@@ -151,7 +153,6 @@ public sealed interface PreparingRequest<T> permits DefaultPreparingRequest {
     /**
      * 同步请求返回经典的 {@link HttpResponse} 实例。用户需要自行处理响应<b>并在使用完毕后关闭相关的资源。</b>
      * <p><b>需要特别注意的是， {@link Request#successCondition()} 不对此方法的请求过程生效。</b>
-     *
      * @return {@link HttpResponse} 实例
      */
     HttpResponse requestClassically() throws RequestFailedException;
