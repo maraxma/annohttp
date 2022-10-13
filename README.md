@@ -18,7 +18,7 @@ public interface ItemService {
 
 // main
 public static void main(String[] args]) {
-    ItemService itemService = AnnoHttpClient.create(ItemService.class);
+    ItemService itemService = AnnoHttpClients.create(ItemService.class);
     ItemInfo itemInfo = itemService.getItemInfo("99", Map.of("JWT", "xxxxxx"));
 }
 ```
@@ -40,7 +40,7 @@ public interface ItemService {
 
 // main
 public static void main(String[] args]) {
-    ItemService itemService = AnnoHttpClient.create(ItemService.class);
+    ItemService itemService = AnnoHttpClients.create(ItemService.class);
     PreparingRequest<ItemInfo> itemInfoReq = itemService.getItemInfo("99", Map.of("JWT", "xxxxxx"));
     // 常规请求
     ItemInfo itemInfo = itemInfoReq.request();
@@ -183,18 +183,18 @@ public interface ItemService {
 将会寻找合适的 ProtocolHandler 来处理。 本质上自定义的协议将会回归到HTTP请求中来。
 
 ```java
-import org.mosin.annohttp.annotation.Method;
+
 import org.mosin.annohttp.annotation.PathVar;
 import org.mosin.annohttp.annotation.Request;
-import org.mosin.annohttp.http.AnnoHttpClient;
+import org.mosin.annohttp.http.AnnoHttpClients;
 
 /********************************
- * 
+ *
  * 如下的例子描述了一个自定义的协议“httpx”
  * 该协议需要通过路径中的服务名称从远端查询获得真正的地址，然后通过此地址附加ItemNumber查询商品的价格
  * 这只是个例子，实际情况需要灵活运用
  * 通过自定义的ProtocolHandler，你几乎可以实现任何基于HTTP的其他和公司具体流程相关的请求动作
- * 
+ *
  *******************************/
 
 
@@ -226,8 +226,8 @@ public interface ItemService {
 // UserCode
 public class Main {
     public static void main(String[] args) {
-        AnnoHttpClient.registerProtocolHandlers(new HttpxProtocolHandler());
-        ItemService itemService = AnnoHttpClient.create(ItemService.class);
+        AnnoHttpClients.registerProtocolHandlers(new HttpxProtocolHandler());
+        ItemService itemService = AnnoHttpClients.create(ItemService.class);
         System.out.println(itemService.getPrice("SK0001"));
     }
 }
@@ -253,8 +253,8 @@ annohttp内置的各种转换器足以应付大部分开发需求。
 转换器在编写完毕后，使用如下的方式告诉annohttp：
 
 ```java
-AnnoHttpClient.registerRequestBodyConverter(new MyRequestBodyConverter());
-AnnoHttpClient.registerResponseBodyConverter(new MyResponseConverter());
+AnnoHttpClients.registerRequestBodyConverter(new MyRequestBodyConverter());
+AnnoHttpClients.registerResponseBodyConverter(new MyResponseConverter());
 ```
 
 

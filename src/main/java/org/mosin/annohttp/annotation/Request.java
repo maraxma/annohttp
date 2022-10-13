@@ -1,5 +1,6 @@
 package org.mosin.annohttp.annotation;
 
+import org.mosin.annohttp.http.AnnoHttpClients;
 import org.mosin.annohttp.http.HttpMethod;
 import org.mosin.annohttp.http.proxy.RequestProxy;
 import org.mosin.annohttp.http.request.converter.AutoRequestBodyConverter;
@@ -16,7 +17,7 @@ import java.util.concurrent.Executor;
 /**
  * 标识一个方法作为HTTP的请求方法。
  * <p>此注解只能应用在接口的抽象方法上。</p>
- * <p>一个接口如果需要用作HTTP客户端，那么其下的所有的抽象方法都应当附加注解@Request，然后使用 {@link org.mosin.annohttp.http.AnnoHttpClient#create(Class)} 方法将此接口实例化。</p>
+ * <p>一个接口如果需要用作HTTP客户端，那么其下的所有的抽象方法都应当附加注解@Request，然后使用 {@link AnnoHttpClients#create(Class)} 方法将此接口实例化。</p>
  * <p>被@Request标注的抽象方法在被调用时会实际发起HTTP请求，然后直接返回期望的结果。这涉及到该方法的返回值的设定。目前annohttp支持几乎所有的类型作为返回值，annohttp会尝试为用户转换。不过如下几种特殊的返回值有其特殊意义需要单独说明。</p>
  * <p>
  *     <table>

@@ -22,13 +22,13 @@ import java.util.function.Function;
  * <p>创建一个注解驱动的请求实例需要如下两步：</p>
  * <ol>
  *    <li>创建接口，定义请求方法，并在请求方法上使用annohttp提供的注解申明请求行为；</li>
- *    <li>使用 {@link AnnoHttpClient#create(Class)} 方法传入接口类，创建真正的实例。</li>
+ *    <li>使用 {@link AnnoHttpClients#create(Class)} 方法传入接口类，创建真正的实例。</li>
  * </ol>
  *
  * @author Mara.X.Ma
  * @since 1.0.0 2022-07-08
  */
-public final class AnnoHttpClient {
+public final class AnnoHttpClients {
 
     /**
      * 为请求接口创建具体的实例。创建好后，你将可以直接调用。

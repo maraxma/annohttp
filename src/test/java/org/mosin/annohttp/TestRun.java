@@ -11,7 +11,7 @@ import org.junit.jupiter.api.*;
 import org.mosin.annohttp.annotation.Body;
 import org.mosin.annohttp.annotation.ContentTypeTextPlain;
 import org.mosin.annohttp.annotation.Request;
-import org.mosin.annohttp.http.AnnoHttpClient;
+import org.mosin.annohttp.http.AnnoHttpClients;
 import org.mosin.annohttp.http.HttpMethod;
 import org.mosin.annohttp.http.PreparingRequest;
 
@@ -65,7 +65,7 @@ public class TestRun {
             String baseRequest(@Body String jsonBody);
         }
 
-        Client c = AnnoHttpClient.create(Client.class);
+        Client c = AnnoHttpClients.create(Client.class);
 
         String req =  """
                 {
@@ -88,7 +88,7 @@ public class TestRun {
             HttpResponse baseRequest(@Body String jsonBody);
         }
 
-        Client c = AnnoHttpClient.create(Client.class);
+        Client c = AnnoHttpClients.create(Client.class);
 
         String req =  """
                 {
@@ -124,7 +124,7 @@ public class TestRun {
             Bean baseRequest(@Body String jsonBody);
         }
 
-        Client c = AnnoHttpClient.create(Client.class);
+        Client c = AnnoHttpClients.create(Client.class);
 
         String req =  """
                 {
@@ -150,7 +150,7 @@ public class TestRun {
             PreparingRequest<Bean> baseRequest(@Body String jsonBody);
         }
 
-        Client c = AnnoHttpClient.create(Client.class);
+        Client c = AnnoHttpClients.create(Client.class);
 
         String s =  """
                 {
@@ -173,7 +173,7 @@ public class TestRun {
             Map<String, Object> baseRequest(@Body String jsonBody);
         }
 
-        Client c = AnnoHttpClient.create(Client.class);
+        Client c = AnnoHttpClients.create(Client.class);
 
         String s =  """
                 {
@@ -195,7 +195,7 @@ public class TestRun {
             Header[] baseRequest(@Body String jsonBody);
         }
 
-        Client c = AnnoHttpClient.create(Client.class);
+        Client c = AnnoHttpClients.create(Client.class);
 
         String s =  """
                 {
@@ -219,7 +219,7 @@ public class TestRun {
             Header[] baseRequest();
         }
 
-        Client c = AnnoHttpClient.create(Client.class);
+        Client c = AnnoHttpClients.create(Client.class);
 
         Header[] headers = c.baseRequest();
 
@@ -237,7 +237,7 @@ public class TestRun {
             StatusLine baseRequest();
         }
 
-        Client c = AnnoHttpClient.create(Client.class);
+        Client c = AnnoHttpClients.create(Client.class);
 
         StatusLine statusLine = c.baseRequest();
 
@@ -254,7 +254,7 @@ public class TestRun {
             // 不推荐将StatusLine、Header[]等特殊类型放入PreparingRequest，因为PreparingRequest是专门处理响应体的
         }
 
-        Client c = AnnoHttpClient.create(Client.class);
+        Client c = AnnoHttpClients.create(Client.class);
         PreparingRequest<StatusLine> preparingRequest = c.baseRequest();
 
         HttpResponse httpResponse = preparingRequest.requestClassically();
@@ -278,11 +278,11 @@ public class TestRun {
             StatusLine baseRequest();
         }
 
-        Client c = AnnoHttpClient.create(Client.class, "http://localhost:8081/");
+        Client c = AnnoHttpClients.create(Client.class, "http://localhost:8081/");
         StatusLine statusLine = c.baseRequest();
         Assertions.assertEquals(200, statusLine.getStatusCode());
 
-        Client c2 = AnnoHttpClient.create(Client.class, (metadata -> {
+        Client c2 = AnnoHttpClients.create(Client.class, (metadata -> {
             if (metadata.getRequestAnnotation().method() == HttpMethod.GET) {
                 return "http://localhost:8081/";
             } else {
