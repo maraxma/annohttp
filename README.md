@@ -5,22 +5,31 @@ annohttp 全称是 Annotation HTTP，是一个靠注解驱动的HTTP客户端，
 
 annohttp采用全注解的方式驱动，在常规模式下无需其他任何额外的代码。
 
-
+annohttp有如下的特性：
+- 全注解驱动
+- 支持自定义协议
+- 支持针对单个请求的代理设定
+- 支持自定义转换器
+- 支持静态和动态baseUrl
+- 支持异步请求
+- 支持快速响应转换
 
 ## 基本请求
 
 ```java
+import org.mosin.annohttp.http.AnnoHttpClients;
+
 // ItemService.java
 public interface ItemService {
     @Request(url = "http://yourhost:8080/item/get/{id}")
     ItemInfo getItemInfo(@PathVar("id") String id, @Headers Map<String, String> headers);
 }
 
-// main
-public static void main(String[] args]) {
-    ItemService itemService = AnnoHttpClients.create(ItemService.class);
-    ItemInfo itemInfo = itemService.getItemInfo("99", Map.of("JWT", "xxxxxx"));
-}
+    // main
+    public static void main(String[] args) {
+        ItemService itemService = AnnoHttpClients.create(ItemService.class);
+        ItemInfo itemInfo = itemService.getItemInfo("99", Map.of("JWT", "xxxxxx"));
+    }
 ```
 
 
@@ -125,8 +134,10 @@ public interface ItemService {
 ```
 
 
-
 ## 配合 spring-boot-starter-annohttp 实现自动装配
+
+PS：自动装配目前不支持在配置文件中对单个类的BaseURL的设定（因为是自动扫描，单个单个配置会导致配置项过多）。
+
 ```yaml
 # application.yml
 annohttp:
@@ -175,7 +186,26 @@ public interface ItemService {
 }
 ```
 
+## BaseURL支持
+annohttp还支持BaseURL。BaseURL是基础URL，和@Request.url拼凑成完全的URL。这适用于请求在同一域名下各种子地址。
 
+annohttp对于BaseURL有两种支持方式：
+
+- 固定的BaseURL：提供一个固定的URL供使用
+```java
+ItemService itemService = AnnoHttpClients.create(ItemService.class, "http://localhost:8080");
+```
+- 动态的BaseURL，适合于动态获取BaseURL
+```java
+ItemService itemService = AnnoHttpClients.create(ItemService.class, metadata -> metadata.getRequestAnnotation().method() == HttpMethod.GET ? "http://localhost:8081" : "http://localhost:9091");
+```
+
+由于@Request.url默认是空字符串，因此，配合动态BaseURL，你可以轻松地实现动态的URL，这非常适用于远程获取URL或者从数据库获取URL的场景。
+```java
+ItemService itemService = AnnoHttpClients.create(ItemService.class, metadata -> remoteService.getItemSerivceUrl());
+```
+
+这个特性有点类似于下文的”自定义协议“，只不过它们的实现方式不同，用途也稍微有点区别。
 
 ## 自定义协议
 
@@ -190,7 +220,7 @@ import org.mosin.annohttp.http.AnnoHttpClients;
 
 /********************************
  *
- * 如下的例子描述了一个自定义的协议“httpx”
+ * 如下的例子描述了一个自定义的协议“myhttp”
  * 该协议需要通过路径中的服务名称从远端查询获得真正的地址，然后通过此地址附加ItemNumber查询商品的价格
  * 这只是个例子，实际情况需要灵活运用
  * 通过自定义的ProtocolHandler，你几乎可以实现任何基于HTTP的其他和公司具体流程相关的请求动作
@@ -198,17 +228,17 @@ import org.mosin.annohttp.http.AnnoHttpClients;
  *******************************/
 
 
-// HttpxProtocolHandler.java
-public class HttpxProtocolHandler implements ProtocolHandler {
+// MyHttpProtocolHandler.java
+public class MyHttpProtocolHandler implements ProtocolHandler {
     @Override
     public String protocol() {
-        return "httpx";
+        return "myhttp";
     }
 
     @Override
     public void handle(AnnoHttpClientMetadata metadata, PreparingRequest<?> preparingRequest) {
         preparingRequest.customRequestUrl(oldUrl -> {
-            String serviceName = oldUrl.replace("httpx").split(":");
+            String serviceName = oldUrl.replace("myhttp").split(":");
             String serviceUrl = serviceReg.getServiceUrl(serviceName);
             String itemNumber = (String) metadata.getRequestMethodArguments()[0];
             return new URIBuilder(serviceUrl).addParameter("itemNumber", itemNumber).toString();
@@ -219,7 +249,7 @@ public class HttpxProtocolHandler implements ProtocolHandler {
 // ItemService.java
 public interface ItemService {
 
-    @Request(url = "httpx://service:item:{itemNumber}")
+    @Request(url = "myhttp://service:item:{itemNumber}")
     BigDecimal getPrice(@PathVar("itemNumber") String itemNumber);
 }
 
@@ -232,8 +262,6 @@ public class Main {
     }
 }
 ```
-
-
 
 ## 自定义转换器
 
@@ -254,9 +282,8 @@ annohttp内置的各种转换器足以应付大部分开发需求。
 
 ```java
 AnnoHttpClients.registerRequestBodyConverter(new MyRequestBodyConverter());
-AnnoHttpClients.registerResponseBodyConverter(new MyResponseConverter());
+AnnoHttpClients.registerResponseConverter(new MyResponseConverter());
 ```
-
 
 ## 注解一览表
 
@@ -267,7 +294,6 @@ AnnoHttpClients.registerResponseBodyConverter(new MyResponseConverter());
 | @Request | 标注于接口的抽象方法上           | 声明这是一个HTTP请求方法       |
 | @Body    | 标注于@Request修饰的方法的参数上 | 声明此参数是该HTTP请求的请求体 |
 | ... 不想写了，请参见源码 |                                 |                                |
-
 
 
 COPYRIGHT @ Mara.X.Ma 2022
