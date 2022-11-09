@@ -1,27 +1,41 @@
 package org.mosin.annohttp;
 
-import io.vertx.core.Vertx;
-import io.vertx.core.http.HttpServer;
-import io.vertx.ext.web.Router;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.mosin.annohttp.annotation.Body;
 import org.mosin.annohttp.annotation.ContentTypeTextPlain;
+import org.mosin.annohttp.annotation.FormField;
+import org.mosin.annohttp.annotation.FormFields;
+import org.mosin.annohttp.annotation.Headers;
+import org.mosin.annohttp.annotation.Method;
+import org.mosin.annohttp.annotation.Queries;
+import org.mosin.annohttp.annotation.Query;
 import org.mosin.annohttp.annotation.Request;
+import org.mosin.annohttp.annotation.Url;
 import org.mosin.annohttp.http.AnnoHttpClients;
 import org.mosin.annohttp.http.HttpMethod;
 import org.mosin.annohttp.http.PreparingRequest;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpServer;
+import io.vertx.ext.web.Router;
 
-public class TestRun {
+public class GenericUsageTest {
 
     static HttpServer httpServer;
 
@@ -45,15 +59,18 @@ public class TestRun {
             requestParam.forEach(entry -> response.putHeader("Request-Param-" + entry.getKey(), entry.getValue()));
             request.body(r -> response.end(r.result()));
         });
-        httpServer = vertx.createHttpServer()
-                .requestHandler(router)
+        httpServer = vertx.createHttpServer();
+        httpServer.requestHandler(router)
                 .listen(8081).onSuccess(r -> System.out.println("已开启HTTP服务：" + r.actualPort())).result();
     }
 
     @AfterAll
     static void afterAll() {
         if (httpServer != null) {
-            httpServer.close(result -> System.out.println("已关闭HTTP服务器"));
+            httpServer.close(result -> {
+                System.out.println("已关闭HTTP服务器");
+                result.result();
+            });
         }
     }
 
@@ -291,5 +308,173 @@ public class TestRun {
         }));
         StatusLine statusLine2 = c2.baseRequest();
         Assertions.assertEquals(200, statusLine2.getStatusCode());
+    }
+
+    @Test
+    @DisplayName("普通测试 -- 默认GET方式，在参数列表中使用@Headers附加请求头(使用Map)")
+    void baseTest11() {
+
+        interface Client {
+            @Request(url = "/test", successCondition = "true")
+            Header[] baseRequest(@Headers Map<String, String> headers);
+        }
+
+        Client c = AnnoHttpClients.create(Client.class, "http://localhost:8081/");
+        Header[] headers = c.baseRequest(Map.of("1", "1", "2", "2"));
+
+        HashMap<String, String> headerMap = Arrays.stream(headers).filter(header -> "1".equals(header.getName()) || "2".equals(header.getName()))
+                .collect(HashMap::new, (l, r) -> l.put(r.getName(), r.getValue()), HashMap::putAll);
+
+        Assertions.assertEquals(2, headerMap.size());
+        Assertions.assertEquals("1", headerMap.get("1"));
+    }
+
+    @Test
+    @DisplayName("普通测试 -- 默认GET方式，在参数列表中使用@Headers附加请求头(使用String[])")
+    void baseTest12() {
+
+        interface Client {
+            @Request(url = "/test", successCondition = "true")
+            Header[] baseRequest(@Headers String[] headers);
+        }
+
+        Client c = AnnoHttpClients.create(Client.class, "http://localhost:8081/");
+        Header[] headers = c.baseRequest(new String[] { "1: 1", "2: 2" });
+
+        HashMap<String, String> headerMap = Arrays.stream(headers).filter(header -> "1".equals(header.getName()) || "2".equals(header.getName()))
+                .collect(HashMap::new, (l, r) -> l.put(r.getName(), r.getValue()), HashMap::putAll);
+
+        Assertions.assertEquals(2, headerMap.size());
+        Assertions.assertEquals("1", headerMap.get("1"));
+    }
+
+    @Test
+    @DisplayName("普通测试 -- 默认GET方式，在参数列表中使用@Header附加请求头")
+    void baseTest13() {
+
+        interface Client {
+            @Request(url = "/test", successCondition = "true")
+            Header[] baseRequest(@org.mosin.annohttp.annotation.Header("Token") String token, @org.mosin.annohttp.annotation.Header("Token2") String token2);
+        }
+
+        Client c = AnnoHttpClients.create(Client.class, "http://localhost:8081/");
+        Header[] headers = c.baseRequest("Fake token", "Fake token 2");
+
+        HashMap<String, String> headerMap = Arrays.stream(headers)
+                .collect(HashMap::new, (l, r) -> l.put(r.getName(), r.getValue()), HashMap::putAll);
+
+        Assertions.assertEquals("Fake token", headerMap.get("Token"));
+        Assertions.assertEquals("Fake token 2", headerMap.get("Token2"));
+    }
+
+    @Test
+    @DisplayName("普通测试 -- 默认GET方式，通过@FormFields发送表单(使用Map)")
+    void baseTest14() {
+
+        interface Client {
+            @Request(url = "/test", successCondition = "true")
+            String baseRequest(@FormFields Map<String, String> formFields);
+        }
+
+        Client c = AnnoHttpClients.create(Client.class, "http://localhost:8081/");
+        LinkedHashMap<String, String> linkedHashMap = new LinkedHashMap<>();
+        linkedHashMap.put("1", "1");
+        linkedHashMap.put("2", "2");
+        String body = c.baseRequest(linkedHashMap);
+
+        Assertions.assertEquals("1=1&2=2", body);
+    }
+
+    @Test
+    @DisplayName("普通测试 -- 默认GET方式，通过@FormField发送表单")
+    void baseTest15() {
+
+        interface Client {
+            @Request(url = "/test", successCondition = "true")
+            String baseRequest(@FormField("Name") String name, @FormField("Age") String age);
+
+            @Request(url = "/test", successCondition = "true", contentType = "application/x-www-form-urlencoded")
+            String baseRequest2(@FormField("Name") String name, @FormField("Age") int age);
+        }
+
+        Client c = AnnoHttpClients.create(Client.class, "http://localhost:8081/");
+        String body = c.baseRequest("Mara", "18");
+        Assertions.assertEquals("Name=Mara&Age=18", body);
+
+        String body2 = c.baseRequest2("Mara", 18);
+        Assertions.assertEquals("Name=Mara&Age=18", body2);
+
+        // PS: 如果@FormField全部都是String，那么会按照urlencoded发送， 只要有一个不是，那么会按照multi-data发送
+        // 当然亦可以自行指定content-type
+    }
+
+    @Test
+    @DisplayName("普通测试 -- 默认GET方式，在参数列表中使用@Queries附加查询参数")
+    void baseTest16() {
+
+        interface Client {
+            @Request(url = "/test", successCondition = "true")
+            Header[] baseRequest(@Queries Map<String, String> queries);
+        }
+
+        Client c = AnnoHttpClients.create(Client.class, "http://localhost:8081/");
+        Header[] headers = c.baseRequest(Map.of("Name", "Mara", "Age", "18"));
+
+        HashMap<String, String> headerMap = Arrays.stream(headers)
+                .filter(e -> e.getName().startsWith("Request-Param-"))
+                .collect(HashMap::new, (l, r) -> l.put(r.getName(), r.getValue()), HashMap::putAll);
+
+        Assertions.assertEquals("Mara", headerMap.get("Request-Param-Name"));
+        Assertions.assertEquals("18", headerMap.get("Request-Param-Age"));
+    }
+
+    @Test
+    @DisplayName("普通测试 -- 默认GET方式，在参数列表中使用@Query附加查询参数")
+    void baseTest17() {
+
+        interface Client {
+            @Request(url = "/test", successCondition = "true")
+            Header[] baseRequest(@Query("Name") String name, @Query("Age") String age);
+        }
+
+        Client c = AnnoHttpClients.create(Client.class, "http://localhost:8081/");
+        Header[] headers = c.baseRequest("Mara", "18");
+
+        HashMap<String, String> headerMap = Arrays.stream(headers)
+                .filter(e -> e.getName().startsWith("Request-Param-"))
+                .collect(HashMap::new, (l, r) -> l.put(r.getName(), r.getValue()), HashMap::putAll);
+
+        Assertions.assertEquals("Mara", headerMap.get("Request-Param-Name"));
+        Assertions.assertEquals("18", headerMap.get("Request-Param-Age"));
+    }
+
+    @Test
+    @DisplayName("普通测试 -- 默认GET方式，在参数列表中使用@Url指定Url")
+    void baseTest18() {
+
+        interface Client {
+            @Request(url = "/testXXX", successCondition = "true")
+            StatusLine baseRequest(@Url String url);
+        }
+
+        Client c = AnnoHttpClients.create(Client.class, "http://localhost:8081/");
+        StatusLine statusLine = c.baseRequest("/test");
+
+        Assertions.assertEquals(200, statusLine.getStatusCode());
+    }
+
+    @Test
+    @DisplayName("普通测试 -- 默认GET方式，在参数列表中使用@Method指定method")
+    void baseTest19() {
+
+        interface Client {
+            @Request(url = "/testXXX", successCondition = "true")
+            Header[] baseRequest(@Url String url, @Method HttpMethod method);
+        }
+
+        Client c = AnnoHttpClients.create(Client.class, "http://localhost:8081/");
+        Header[] headers = c.baseRequest("/test", HttpMethod.POST);
+
+        Assertions.assertEquals("POST", Arrays.stream(headers).filter(e -> "Request-Method".equals(e.getName())).findFirst().map(Header::getValue).orElse(null));
     }
 }

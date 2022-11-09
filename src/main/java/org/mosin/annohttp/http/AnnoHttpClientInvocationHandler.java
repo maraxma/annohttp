@@ -43,6 +43,13 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
     public Object invoke(Object proxy, Method method, Object[] args) {
     	
     	Request requestAnno = method.getAnnotation(Request.class);
+
+        AnnoHttpService annoHttpServiceAnno = method.getDeclaringClass().getAnnotation(AnnoHttpService.class);
+        if (annoHttpServiceAnno != null) {
+            if (baseUrl == null || "".equals(baseUrl.trim())) {
+                baseUrl = annoHttpServiceAnno.baseUrl();
+            }
+        }
     	
     	if (requestAnno == null) {
     		throw new IllegalArgumentException("Method in an annohttp service client must be decorated by @Request");
@@ -326,7 +333,7 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
                 addCoverable(headers, new CoverableNameValuePair(annoHeaderName, argHeaderValue));
             }
             if (parameter.isAnnotationPresent(Headers.class)) {
-                if (!Map.class.isAssignableFrom(parameterType) || !String[].class.isAssignableFrom(parameterType)) {
+                if (!Map.class.isAssignableFrom(parameterType) && !String[].class.isAssignableFrom(parameterType)) {
                     throw new IllegalArgumentException("@Headers parameter should be type of String[] or Map<String, String>");
                 }
                 if (String[].class.isAssignableFrom(parameterType)) {
@@ -657,8 +664,8 @@ public class AnnoHttpClientInvocationHandler implements InvocationHandler {
         } else {
 	        if (!"".equals(requestProxySpel)) {
 	            Object requestProxySpelResult = SpelUtils.executeSpel(requestProxySpel, evaluationContext, Object.class);
-	            if (!(requestProxySpelResult instanceof RequestProxy) || requestProxySpelResult == null) {
-	                throw new IllegalArgumentException("proxy must return an instance of RequestProxy");
+	            if (!(requestProxySpelResult instanceof RequestProxy)) {
+	                throw new IllegalArgumentException("@Request.proxy must return an instance of RequestProxy and cannot be null");
 	            } else {
 	                requestProxy = (RequestProxy) requestProxySpelResult;
 	            }

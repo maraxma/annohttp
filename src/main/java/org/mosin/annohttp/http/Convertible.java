@@ -1,6 +1,5 @@
 package org.mosin.annohttp.http;
 
-import java.io.Closeable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -10,7 +9,7 @@ import org.mosin.annohttp.http.serialization.TypeRef;
 /**
  * 代表一个可转换的对象。特别地，annohttp将响应体作为一个可转换对象。
  */
-public interface Convertible extends Closeable {
+public interface Convertible {
 
     <T> T toBean(Class<T> clazz);
 

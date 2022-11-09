@@ -55,7 +55,6 @@ public final class AnnoHttpClients {
     public static <T> T create(Class<T> annoHttpClass, String baseUrl) {
         // 动态代理
         // 都是基于接口的，因此使用JDK自带的动态代理即可
-        // TODO 实现baseUrl
         return (T) Proxy.newProxyInstance(annoHttpClass.getClassLoader(), new Class<?>[]{annoHttpClass}, InvocationHandlerHolder.getOrCreateAnnoHttpClientInvocationHandler(baseUrl));
     }
 
@@ -71,7 +70,6 @@ public final class AnnoHttpClients {
     public static <T> T create(Class<T> annoHttpClass, Function<AnnoHttpClientMetadata, String> baseUrlProvider) {
         // 动态代理
         // 都是基于接口的，因此使用JDK自带的动态代理即可
-        // TODO 实现baseUrlProvider
         return (T) Proxy.newProxyInstance(annoHttpClass.getClassLoader(), new Class<?>[]{annoHttpClass}, new AnnoHttpClientInvocationHandler(baseUrlProvider));
     }
 

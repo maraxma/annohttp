@@ -1,12 +1,11 @@
 package org.mosin.annohttp.http.response.converter;
 
+import java.nio.charset.Charset;
+
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
-import org.apache.http.StatusLine;
 import org.apache.http.entity.ContentType;
 import org.mosin.annohttp.http.AnnoHttpClientMetadata;
-
-import java.nio.charset.Charset;
 
 /**
  * StatusLine转换器。负责提取响应体中的StatusLine。

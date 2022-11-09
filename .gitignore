@@ -1,6 +1,7 @@
 /.vscode/
 /.idea/
 /.settings/
+/.fleet/
 /logs/
 /target/
 .classpath

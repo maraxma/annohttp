@@ -18,11 +18,12 @@ import org.apache.http.util.EntityUtils;
 import org.mosin.annohttp.http.exception.ConversionException;
 
 /**
- * 可操作响应体。提供一系列方便的操作方法以便将此湘阴提提转换为用户期望的形式。
+ * 可操作响应体。提供一系列方便的操作方法以便将此响应体转换为用户期望的形式。
  * @param httpResponse 响应体实例
  * @author Mara.X.Ma
  * @since 1.0.0
  */
+@SuppressWarnings("deprecation")
 public record OperableHttpResponse(HttpResponse httpResponse) implements HttpResponse, Sequencable {
 
     public OperableHttpResponse {
@@ -196,11 +197,6 @@ public record OperableHttpResponse(HttpResponse httpResponse) implements HttpRes
     }
 
     @Override
-    public void close() {
-        EntityUtils.consumeQuietly(getEntity());
-    }
-
-    @Override
     public InputStream asInputStream() {
         return Optional.of(httpResponse.getEntity()).map(t -> {
             try {
@@ -254,6 +250,11 @@ public record OperableHttpResponse(HttpResponse httpResponse) implements HttpRes
             return null;
         }
         return convertibleProducer.apply(httpResponse, DEFAULT_CHARSET);
+    }
+
+    @Override
+    public void close() {
+        EntityUtils.consumeQuietly(getEntity());
     }
 
 }

@@ -3,8 +3,6 @@
 annohttp 全称是 Annotation HTTP，是一个靠注解驱动的HTTP客户端，类似于retrofit，但基于HttpClient而非OKHttp，
 并且提供了更多的更灵活的操作。
 
-annohttp采用全注解的方式驱动，在常规模式下无需其他任何额外的代码。
-
 annohttp有如下的特性：
 - 全注解驱动
 - 支持自定义协议
@@ -13,6 +11,7 @@ annohttp有如下的特性：
 - 支持静态和动态baseUrl
 - 支持异步请求
 - 支持快速响应转换
+- 支持SPEL
 
 ## 基本请求
 
@@ -25,11 +24,14 @@ public interface ItemService {
     ItemInfo getItemInfo(@PathVar("id") String id, @Headers Map<String, String> headers);
 }
 
+// Application.java
+public class Application {
     // main
     public static void main(String[] args) {
         ItemService itemService = AnnoHttpClients.create(ItemService.class);
         ItemInfo itemInfo = itemService.getItemInfo("99", Map.of("JWT", "xxxxxx"));
     }
+}
 ```
 
 
@@ -47,20 +49,23 @@ public interface ItemService {
     PreparingRequest<ItemInfo> getItemInfo(@PathVar("id") String id, @Headers Map<String, String> headers);
 }
 
-// main
-public static void main(String[] args]) {
-    ItemService itemService = AnnoHttpClients.create(ItemService.class);
-    PreparingRequest<ItemInfo> itemInfoReq = itemService.getItemInfo("99", Map.of("JWT", "xxxxxx"));
-    // 常规请求
-    ItemInfo itemInfo = itemInfoReq.request();
-    // 异步请求
-    ItemInfo itemInfo2 = itemInfoReq.requestAsync(new MyExecutor());
-    // 经典请求（返回HttpResponse对象，适合于需要自行处理响应的情况）
-    HttpResponse response = itemInfoReq.requestClassically();
-    // 在请求前修改请求头或请求参数(XXX代表具体的内容，参见源码)
-    itemInfoReq.customXXX();
-    // 将请求后的返回视为可操作性对象（可操作性对象提供了很多便捷方法，参见源码）
-    itemInfoReq.requestOperable();
+// Application.java
+public class Application {
+    // main
+    public static void main(String[] args]) {
+        ItemService itemService = AnnoHttpClients.create(ItemService.class);
+        PreparingRequest<ItemInfo> itemInfoReq = itemService.getItemInfo("99", Map.of("JWT", "xxxxxx"));
+        // 常规请求
+        ItemInfo itemInfo = itemInfoReq.request();
+        // 异步请求
+        ItemInfo itemInfo2 = itemInfoReq.requestAsync(new MyExecutor());
+        // 经典请求（返回HttpResponse对象，适合于需要自行处理响应的情况）
+        HttpResponse response = itemInfoReq.requestClassically();
+        // 在请求前修改请求头或请求参数(XXX代表具体的内容，参见源码)
+        itemInfoReq.customXXX();
+        // 将请求后的返回视为可操作性对象（可操作性对象提供了很多便捷方法，参见源码）
+        itemInfoReq.requestOperable();
+    }
 }
 ```
 
@@ -134,26 +139,30 @@ public interface ItemService {
 ```
 
 
-## 配合 spring-boot-starter-annohttp 实现自动装配
+## 配合 spring 实现自动装配
 
-PS：自动装配目前不支持在配置文件中对单个类的BaseURL的设定（因为是自动扫描，单个单个配置会导致配置项过多）。
+1. 在SpringBoot项目的入口类上标注@EnableAnnoHttpAutoAssembling
+2. 在一个或多个包下书写annohttp接口并将其标注@AnnoHttpService
+3. 在你的spring配置文件中增加如下的项
 
 ```yaml
 # application.yml
 annohttp:
-  http-client:
-    connect-timeout-in-seconds: 10 
-    socket-timeout-in-seconds: 10
-    read-timeout-in-seconds: 20
-    connection-idle-timeout-in-seconds: 20
-    connection-timeout-in-seconds: 20
-    max-connections: 80
-    max-connections-per-route: 40
-    keep-alive: false
-    keep-alive-time-in-seconds: 30
-    flow-redirect: true
+  connect-timeout-in-seconds: 10 
+  socket-timeout-in-seconds: 10
+  connection-idle-timeout-in-seconds: 20
+  connection-timeout-in-seconds: 20
+  max-connections: 80
+  max-connections-per-route: 40
+  keep-alive: false
+  keep-alive-time-in-seconds: 30
+  flow-redirect: true
+  trust-any-ssl: true
   service-base-packages: [com.xx.xx.http.service, com.xx.xx.http.request]
 ```
+
+4. 直接注入使用
+
 ```java
 // 注入，然后直接使用
 @Autowired
