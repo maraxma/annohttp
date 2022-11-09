@@ -1,5 +1,7 @@
 package org.mosin.annohttp.spring.configuration;
 
+import java.util.Set;
+
 import org.mosin.annohttp.annotation.AnnoHttpService;
 import org.mosin.annohttp.http.AnnoHttpClients;
 import org.springframework.beans.BeansException;
@@ -7,11 +9,7 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
-import org.springframework.context.annotation.ClassPathBeanDefinitionScanner;
-import org.springframework.core.annotation.AnnotationFilter;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
-
-import java.util.Set;
 
 public class AnnoHttpServiceBeanFactoryProcessor implements BeanFactoryPostProcessor {
 

@@ -3,7 +3,6 @@ package org.mosin.annohttp.spring.configuration;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.context.annotation.ClassPathBeanDefinitionScanner;
-import org.springframework.core.type.AnnotationMetadata;
 
 public class ClassPathAnnoHttpServiceBeanDefinitionScanner extends ClassPathBeanDefinitionScanner {
 
