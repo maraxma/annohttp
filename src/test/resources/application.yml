@@ -1,4 +1,0 @@
-annohttp:
-  service-base-packages: [org.mosin.annohttp.httpservice]
-  flow-redirect: false
-  keep-alive: false
