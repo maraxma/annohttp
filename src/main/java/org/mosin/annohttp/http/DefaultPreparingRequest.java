@@ -277,13 +277,13 @@ non-sealed class DefaultPreparingRequest<T> implements PreparingRequest<T> {
     }
 
     @Override
-    public CompletableFuture<HttpResponse> requestAsyncClassically(Executor executorService) {
+    public CompletableFuture<HttpResponse> requestClassicallyAsync(Executor executorService) {
         return CompletableFuture.supplyAsync(this::requestClassically, executorService);
     }
 
     @Override
     public void requestClassicallyAsync(Executor executorService, Consumer<HttpResponse> resultConsumer) {
-        requestAsyncClassically(executorService).thenAccept(resultConsumer);
+        requestClassicallyAsync(executorService).thenAccept(resultConsumer);
     }
 
     @Override

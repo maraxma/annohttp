@@ -163,7 +163,7 @@ public sealed interface PreparingRequest<T> permits DefaultPreparingRequest {
      * @param executorService 线程池
      * @return 未来对象
      */
-    CompletableFuture<HttpResponse> requestAsyncClassically(Executor executorService);
+    CompletableFuture<HttpResponse> requestClassicallyAsync(Executor executorService);
 
     /**
      * {@link #requestClassically()} 的带回调异步版本。

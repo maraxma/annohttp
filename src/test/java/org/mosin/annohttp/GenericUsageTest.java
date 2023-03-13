@@ -1,39 +1,22 @@
 package org.mosin.annohttp;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
+import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpServer;
+import io.vertx.ext.web.Router;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.mosin.annohttp.annotation.Body;
-import org.mosin.annohttp.annotation.ContentTypeTextPlain;
-import org.mosin.annohttp.annotation.FormField;
-import org.mosin.annohttp.annotation.FormFields;
-import org.mosin.annohttp.annotation.Headers;
-import org.mosin.annohttp.annotation.Method;
-import org.mosin.annohttp.annotation.Queries;
-import org.mosin.annohttp.annotation.Query;
-import org.mosin.annohttp.annotation.Request;
-import org.mosin.annohttp.annotation.Url;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.function.Executable;
+import org.mosin.annohttp.annotation.*;
 import org.mosin.annohttp.http.AnnoHttpClients;
 import org.mosin.annohttp.http.HttpMethod;
 import org.mosin.annohttp.http.PreparingRequest;
 
-import io.vertx.core.Vertx;
-import io.vertx.core.http.HttpServer;
-import io.vertx.ext.web.Router;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 public class GenericUsageTest {
 
@@ -476,5 +459,21 @@ public class GenericUsageTest {
         Header[] headers = c.baseRequest("/test", HttpMethod.POST);
 
         Assertions.assertEquals("POST", Arrays.stream(headers).filter(e -> "Request-Method".equals(e.getName())).findFirst().map(Header::getValue).orElse(null));
+    }
+
+    @Test
+    @DisplayName("普通测试 -- 默认GET方式，在参数列表中使用多个@Body，预期抛出异常")
+    void baseTest20() {
+
+        interface Client {
+            @Request(url = "/testXXX", successCondition = "true")
+            Header[] baseRequest(@Url String url, @Method HttpMethod method, @Body Map<String, Object> body1, @Body Map<String, Object> body2);
+        }
+
+        Client c = AnnoHttpClients.create(Client.class, "http://localhost:8081/");
+        Executable executable =  () -> c.baseRequest("/test", HttpMethod.POST, Map.of(), Map.of());
+
+        IllegalArgumentException e = Assertions.assertThrows(IllegalArgumentException.class, executable);
+        Assertions.assertTrue(e.getMessage() != null && e.getMessage().contains("You cannot use more than 1 @Body"));
     }
 }
